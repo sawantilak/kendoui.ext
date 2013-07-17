@@ -10,9 +10,16 @@
     <script src="../../../js/jquery.min.js"></script>
     <script src="../../../js/kendo.web.min.js"></script>
     <script src="../../content/shared/js/console.js"></script>
+    <script>
+        
+    </script>
+    
+    
 </head>
 <body>
-    <a class="offline-button" href="../index.html">Back</a>
+    
+        <a class="offline-button" href="../index.html">Back</a>
+    
     <div id="example" class="k-content">
 
 
@@ -59,6 +66,7 @@
             <script>
                 $(document).ready(function() {
                     var categories = $("#categories").kendoComboBox({
+                        filter: "contains",
                         placeholder: "Select category...",
                         dataTextField: "CategoryName",
                         dataValueField: "CategoryID",
@@ -74,6 +82,7 @@
                     var products = $("#products").kendoComboBox({
                         autoBind: false,
                         cascadeFrom: "categories",
+                        filter: "contains",
                         placeholder: "Select product...",
                         dataTextField: "ProductName",
                         dataValueField: "ProductID",
@@ -89,6 +98,7 @@
                     var orders = $("#orders").kendoComboBox({
                         autoBind: false,
                         cascadeFrom: "products",
+                        filter: "contains",
                         placeholder: "Select order...",
                         dataTextField: "Order.ShipCity",
                         dataValueField: "OrderID",

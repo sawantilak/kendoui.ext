@@ -10,9 +10,16 @@
     <script src="../../../js/jquery.min.js"></script>
     <script src="../../../js/kendo.web.min.js"></script>
     <script src="../../content/shared/js/console.js"></script>
+    <script>
+        
+    </script>
+    
+    
 </head>
 <body>
-    <a class="offline-button" href="../index.html">Back</a>
+    
+        <a class="offline-button" href="../index.html">Back</a>
+    
     
         <div id="example" class="k-content">
             <div id="climateCtrl">
@@ -34,11 +41,11 @@
                 }
 
                 function rangeSliderOnSlide(e) {
-                    kendoConsole.log("Slide :: new slide value is: " + e.value.toString().replace(",", " - "));
+                    kendoConsole.log("Slide :: new slide values are: " + e.value.toString().replace(",", " - "));
                 }
 
                 function rangeSliderOnChange(e) {
-                    kendoConsole.log("Change :: new value is: " + e.value.toString().replace(",", " - "));
+                    kendoConsole.log("Change :: new values are: " + e.value.toString().replace(",", " - "));
                 }
 
                 $(document).ready(function() {

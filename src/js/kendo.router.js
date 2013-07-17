@@ -1,137 +1,59 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "router",
-    name: "history",
+    name: "History",
     category: "framework",
-    description: "Kendo Router",
+    description: "The Router class is responsible for tracking the application state and navigating between the application states.",
     depends: [ "core" ],
     hidden: false
 });
 
 (function($, undefined) {
     var kendo = window.kendo,
+        support = kendo.support,
         location = window.location,
         history = window.history,
         _checkUrlInterval = 50,
         hashStrip = /^#*/,
-        documentMode = window.document.documentMode,
-        oldIE = kendo.support.browser.msie && (!documentMode || documentMode <= 8),
-        hashChangeSupported = ("onhashchange" in window) && !oldIE,
         document = window.document;
 
     var History = kendo.Observable.extend({
         start: function(options) {
+            var that = this;
             options = options || {};
 
-            var that = this;
+            that.bind(["change"], options);
 
+            if (that._started) {
+                return;
+            }
+            that._started = true;
             that._pushStateRequested = !!options.pushState;
-            that._pushState = that._pushStateRequested && that._pushStateSupported();
+            that._pushState = support.pushState && that._pushStateRequested;
             that.root = options.root || "/";
             that._interval = 0;
 
-            this.bind(["change", "ready"], options);
             if (that._normalizeUrl()) {
                 return true;
             }
 
             that.current = that._currentLocation();
+            that.locations = [that.current];
             that._listenToLocationChange();
-            that.trigger("ready", {url: that.current});
         },
 
         stop: function() {
             $(window).unbind(".kendo");
             this.unbind("change");
-            this.unbind("ready");
             clearInterval(this._interval);
-        },
-
-        _normalizeUrl: function() {
-            var that = this,
-                pushStateUrl,
-                atRoot = that.root == location.pathname,
-                pushStateUrlNeedsTransform = that._pushStateRequested && !that._pushStateSupported() && !atRoot,
-                hashUrlNeedsTransform = that._pushState && atRoot && location.hash;
-
-            if (pushStateUrlNeedsTransform) {
-                location.replace(that.root + '#' + that._stripRoot(location.pathname));
-                return true;
-            } else if (hashUrlNeedsTransform) {
-                pushStateUrl = that._makePushStateUrl(location.hash.replace(hashStrip, ''));
-                history.replaceState({}, document.title, pushStateUrl);
-                return false;
-            }
-            return false;
-        },
-
-        _listenToLocationChange: function() {
-            var that = this, _checkUrlProxy = $.proxy(that._checkUrl, that);
-
-            if (this._pushState) {
-                $(window).bind("popstate.kendo", _checkUrlProxy);
-            } else if (hashChangeSupported) {
-                $(window).bind("hashchange.kendo", _checkUrlProxy);
-            } else {
-                that._interval = setInterval(_checkUrlProxy, _checkUrlInterval);
-            }
-        },
-
-        _pushStateSupported: function() {
-            return window.history && window.history.pushState;
-        },
-
-        _checkUrl: function() {
-            var that = this, current = that._currentLocation();
-
-            if (current != that.current) {
-                that.navigate(current);
-            }
-        },
-
-        _stripRoot: function(url) {
-            var that = this;
-
-            if (url.indexOf(that.root) === 0) {
-                return ('/' + url.substr(that.root.length)).replace(/\/\//g, '/');
-            } else {
-                return url;
-            }
-        },
-
-        _makePushStateUrl: function(address) {
-            var that = this;
-
-            if (address.indexOf(that.root) !== 0) {
-                address = (that.root + address).replace(/\/\//g, '/');
-            }
-
-            return location.protocol + '//' + location.host + address;
-        },
-
-        _currentLocation: function() {
-            var that = this, current;
-
-            if (that._pushState) {
-                current = location.pathname;
-
-                if (location.search) {
-                    current += location.search;
-                }
-
-                return that._stripRoot(current);
-            } else {
-                return location.hash.replace(hashStrip, '');
-            }
+            this._started = false;
         },
 
         change: function(callback) {
@@ -154,7 +76,7 @@ kendo_module({
 
             if (!silent) {
                 if (that.trigger("change", { url: to })) {
-                    to = that.current; // revert to current,
+                    return;
                 }
             }
 
@@ -163,6 +85,102 @@ kendo_module({
                 that.current = to;
             } else {
                 location.hash = that.current = to;
+            }
+
+            that.locations.push(that.current);
+        },
+
+        _normalizeUrl: function() {
+            var that = this,
+                pushStateUrl,
+                atRoot = that.root == location.pathname,
+                pushStateUrlNeedsTransform = that._pushStateRequested && !support.pushState && !atRoot,
+                hashUrlNeedsTransform = that._pushState && atRoot && location.hash;
+
+            if (pushStateUrlNeedsTransform) {
+                location.replace(that.root + '#' + that._stripRoot(location.pathname));
+                return true;
+            } else if (hashUrlNeedsTransform) {
+                pushStateUrl = that._makePushStateUrl(location.hash.replace(hashStrip, ''));
+                history.replaceState({}, document.title, pushStateUrl);
+                return false;
+            }
+            return false;
+        },
+
+        _listenToLocationChange: function() {
+            var that = this, _checkUrlProxy = $.proxy(that._checkUrl, that);
+
+            if (this._pushState) {
+                $(window).bind("popstate.kendo", _checkUrlProxy);
+            } else if (support.hashChange) {
+                $(window).bind("hashchange.kendo", _checkUrlProxy);
+            } else {
+                that._interval = setInterval(_checkUrlProxy, _checkUrlInterval);
+            }
+        },
+
+        _checkUrl: function() {
+            var that = this,
+                current = that._currentLocation().replace(hashStrip, ''),
+                back = current === that.locations[that.locations.length - 2];
+
+            if (that.current === current || that.current === decodeURIComponent(current)) {
+                return;
+            }
+
+            if (that.trigger("change", { url: current })) {
+                if (back) {
+                    history.forward();
+                } else {
+                    history.back();
+                }
+                return;
+            }
+
+            that.current = current;
+
+            if (back) {
+                that.locations.pop();
+            } else {
+                that.locations.push(current);
+            }
+        },
+
+        _stripRoot: function(url) {
+            var that = this;
+
+            if (url.indexOf(that.root) === 0) {
+                return (url.substr(that.root.length)).replace(/\/\//g, '/');
+            } else {
+                return url;
+            }
+        },
+
+        _makePushStateUrl: function(address) {
+            var that = this;
+            var regEx = new RegExp("^" + that.root, "i");
+
+            if (!regEx.test(address)) {
+                address = (that.root + address).replace(/\/\//g, '/');
+            }
+
+            return location.protocol + '//' + location.host + address;
+        },
+
+        _currentLocation: function() {
+            var that = this, current;
+
+            if (that._pushState) {
+                current = location.pathname;
+
+                if (location.search) {
+                    current += location.search;
+                }
+
+                return that._stripRoot(current);
+            } else {
+                return location.hash.replace(hashStrip, '');
             }
         }
     });
@@ -232,38 +250,37 @@ kendo_module({
         init: function(options) {
             Observable.fn.init.call(this);
             this.routes = [];
+            this.pushState = options ? options.pushState : false;
+            if (options && options.root) {
+                this.root = options.root;
+            }
             this.bind([INIT, ROUTE_MISSING, CHANGE], options);
         },
 
         destroy: function() {
-            history.unbind("ready", this._readyProxy);
             history.unbind("change", this._urlChangedProxy);
             this.unbind();
         },
 
         start: function() {
             var that = this,
-                readyProxy = function(e) {
-                    if (!e.url) {
-                        e.url = "/";
-                    }
-
-                    if (!that.trigger(INIT, e)) {
-                        that._urlChanged(e);
-                    }
-                },
-
                 urlChangedProxy = function(e) {
                     that._urlChanged(e);
                 };
 
-            kendo.history.start({
-                ready: readyProxy,
-                change: urlChangedProxy
+            history.start({
+                change: urlChangedProxy,
+                pushState: that.pushState,
+                root: that.root
             });
 
+            var initEventObject = { url: history.current || "/" };
+
+            if (!that.trigger(INIT, initEventObject)) {
+                that._urlChanged(initEventObject);
+            }
+
             this._urlChangedProxy = urlChangedProxy;
-            this._readyProxy = readyProxy;
         },
 
         route: function(route, callback) {
@@ -298,7 +315,9 @@ kendo_module({
                  }
             }
 
-            this.trigger(ROUTE_MISSING, { url: url });
+            if (this.trigger(ROUTE_MISSING, { url: url })) {
+                e.preventDefault();
+            }
         }
     });
 

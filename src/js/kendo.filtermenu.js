@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "filtermenu",
     name: "Filtering Menu",
@@ -120,16 +118,32 @@ kendo_module({
         return result;
     }
 
+
+    function clearFilter(filters, field) {
+        return $.grep(filters, function(expr) {
+            if (expr.filters) {
+                expr.filters = $.grep(expr.filters, function(nested) {
+                    return nested.field != field;
+                });
+
+                return expr.filters.length;
+            }
+            return expr.field != field;
+        });
+    }
+
     var FilterMenu = Widget.extend({
         init: function(element, options) {
             var that = this,
                 type = "string",
+                operators,
+                initial,
                 link,
                 field;
 
             Widget.fn.init.call(that, element, options);
 
-            that.operators = options.operators || {};
+            operators = that.operators = options.operators || {};
 
             element = that.element;
             options = that.options;
@@ -173,25 +187,6 @@ kendo_module({
 
             that.type = type;
 
-            if (options.appendToElement) { // force creation if used in column menu
-                that._init();
-            }
-        },
-
-        _init: function() {
-            var that = this,
-                options = that.options,
-                operators = that.operators || {},
-                initial,
-                ui = options.ui,
-                setUI = isFunction(ui),
-                role,
-                type = that.type;
-
-            that._refreshHandler = proxy(that.refresh, that);
-
-            that.dataSource.bind("change", that._refreshHandler);
-
             operators = operators[type] || options.operators[type];
 
             for (initial in operators) { // get the first operator
@@ -202,11 +197,33 @@ kendo_module({
                 return { field: that.field, operator: initial || "eq", value: "" };
             };
 
+            that._refreshHandler = proxy(that.refresh, that);
+
+            that.dataSource.bind("change", that._refreshHandler);
+
+            if (options.appendToElement) { // force creation if used in column menu
+                that._init();
+            } else {
+                that.refresh(); //refresh if DataSource is fitered before menu is created
+            }
+        },
+
+        _init: function() {
+            var that = this,
+                options = that.options,
+                operators = that.operators || {},
+                ui = options.ui,
+                setUI = isFunction(ui),
+                role,
+                type = that.type;
+
+            operators = operators[type] || options.operators[type];
+
             if (!setUI) {
                 role = ui || roles[type];
             }
 
-            that.form = $('<form class="k-filter-menu"/>')
+            that.form = $('<form class="k-filter-menu k-secondary"/>')
                 .html(kendo.template(type === "boolean" ? booleanTemplate : defaultTemplate)({
                     field: that.field,
                     format: options.format,
@@ -269,8 +286,10 @@ kendo_module({
                 filters: [ that._defaultFilter(), that._defaultFilter()]
             });
 
-            //NOTE: binding the form element directly causes weird error in IE when grid is bound through MVVM and column is sorted
-            kendo.bind(that.form.children().first(), that.filterModel);
+            if (that.form) {
+                //NOTE: binding the form element directly causes weird error in IE when grid is bound through MVVM and column is sorted
+                kendo.bind(that.form.children().first(), that.filterModel);
+            }
 
             if (that._bind(expression)) {
                 that.link.addClass("k-state-active");
@@ -293,7 +312,9 @@ kendo_module({
 
             that.link.unbind(NS);
 
-            that.dataSource.unbind("change", that._refreshHandler);
+            if (that._refreshHandler) {
+                that.dataSource.unbind("change", that._refreshHandler);
+            }
         },
 
         _bind: function(expression) {
@@ -342,7 +363,7 @@ kendo_module({
             removeFiltersForField(result, that.field);
 
             filters = $.grep(filters, function(filter) {
-                return filter.value !== "";
+                return filter.value !== "" && filter.value != null;
             });
 
             for (idx = 0, length = filters.length; idx < length; idx++) {
@@ -387,9 +408,7 @@ kendo_module({
 
             expression.filters = $.grep(expression.filters, function(filter) {
                 if (filter.filters) {
-                    filter.filters = $.grep(filter.filters, function(expr) {
-                        return expr.field != that.field;
-                    });
+                    filter.filters = clearFilter(filter.filters, that.field);
 
                     return filter.filters.length;
                 }

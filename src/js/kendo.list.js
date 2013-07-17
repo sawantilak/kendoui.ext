@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "list",
     name: "List",
@@ -34,6 +32,7 @@ kendo_module({
         OPEN = "open",
         CLOSE = "close",
         SELECT = "select",
+        SELECTED = "selected",
         PROGRESS = "progress",
         REQUESTEND = "requestEnd",
         WIDTH = "width",
@@ -84,7 +83,12 @@ kendo_module({
                 that._optionID = id + "_option_selected";
             }
 
+            that._accessors();
             that._initValue();
+        },
+
+        options: {
+            valuePrimitive: false
         },
 
         setOptions: function(options) {
@@ -517,7 +521,8 @@ kendo_module({
 
             that.dataSource.unbind(CHANGE, that._refreshHandler)
                            .unbind(PROGRESS, that._progressHandler)
-                           .unbind(REQUESTEND, that._requestEndHandler);
+                           .unbind(REQUESTEND, that._requestEndHandler)
+                           .unbind("error", that._errorHandler);
         }
     });
 
@@ -602,16 +607,13 @@ kendo_module({
         },
 
         _accessor: function(value, idx) {
-            var element = this.element,
+            var element = this.element[0],
                 isSelect = this._isSelect,
-                option, selectedIndex;
-
-            element = element[0];
+                selectedIndex = element.selectedIndex,
+                option;
 
             if (value === undefined) {
                 if (isSelect) {
-                    selectedIndex = element.selectedIndex;
-
                     if (selectedIndex > -1) {
                         option = element.options[selectedIndex];
 
@@ -625,7 +627,15 @@ kendo_module({
                 return value;
             } else {
                 if (isSelect) {
+                    if (selectedIndex > -1) {
+                        element.options[selectedIndex].removeAttribute(SELECTED);
+                    }
+
                     element.selectedIndex = idx;
+                    option = element.options[idx];
+                    if (option) {
+                       option.setAttribute(SELECTED, SELECTED);
+                    }
                 } else {
                     element.value = value;
                 }
@@ -685,12 +695,14 @@ kendo_module({
                 that._refreshHandler = proxy(that.refresh, that);
                 that._progressHandler = proxy(that._showBusy, that);
                 that._requestEndHandler = proxy(that._requestEnd, that);
+                that._errorHandler = proxy(that._hideBusy, that);
             }
 
             that.dataSource = kendo.data.DataSource.create(dataSource)
                                    .bind(CHANGE, that._refreshHandler)
                                    .bind(PROGRESS, that._progressHandler)
-                                   .bind(REQUESTEND, that._requestEndHandler);
+                                   .bind(REQUESTEND, that._requestEndHandler)
+                                   .bind("error", that._errorHandler);
         },
 
         _get: function(li) {
@@ -729,26 +741,45 @@ kendo_module({
                 methodName = that.popup.visible() ? "_select" : "_accept",
                 current = that._current,
                 down = key === keys.DOWN,
+                firstChild,
                 pressed;
 
             if (key === keys.UP || down) {
                 if (e.altKey) {
                     that.toggle(down);
-                } else if (down) {
-                    if (!current || (that.selectedIndex === -1 && !that.value() && current[0] === ul.firstChild)) {
-                        current = ul.firstChild;
-                    } else {
-                        current = current[0].nextSibling;
+                } else {
+                    firstChild = ul.firstChild;
+                    if (!firstChild && !that._accessor() && that._state !== "filter") {
+                        that.dataSource.one(CHANGE, function() { that._move(e); });
+                        that._filterSource();
+                        e.preventDefault();
+                        return true; //pressed
                     }
 
-                    that[methodName](current);
-                } else {
-                    that[methodName](current ? current[0].previousSibling : ul.lastChild);
+                    if (down) {
+                        if (!current || (that.selectedIndex === -1 && !that.value() && current[0] === firstChild)) {
+                            current = firstChild;
+                        } else {
+                            current = current[0].nextSibling;
+                            if (!current && firstChild === ul.lastChild) {
+                                current = firstChild;
+                            }
+                        }
+
+                        that[methodName](current);
+                    } else {
+                        current = current ? current[0].previousSibling : ul.lastChild;
+                        if (!current && firstChild === ul.lastChild) {
+                            current = firstChild;
+                        }
+
+                        that[methodName](current);
+                    }
                 }
+
                 e.preventDefault();
                 pressed = true;
             } else if (key === keys.ENTER || key === keys.TAB) {
-
                 if (that.popup.visible()) {
                     e.preventDefault();
                 }
@@ -768,14 +799,19 @@ kendo_module({
 
         _selectItem: function(value) {
             var that = this,
-                options = that.options;
+                options = that.options,
+                index = that.selectedIndex;
 
             value = that._selectedValue || options.value || that._accessor();
 
             if (value) {
                 that.value(value);
-            } else if (!that._bound) {
-                that.select(options.index);
+            } else if (!that._bound || index > -1) {
+                if (!that._bound) {
+                    index = options.index;
+                }
+
+                that.select(index);
             }
         },
 
@@ -850,13 +886,14 @@ kendo_module({
             }
 
             element.html(options);
-            element[0].selectedIndex = selectedIndex;
+            element[0].selectedIndex = selectedIndex === -1 ? 0 : selectedIndex;
         },
 
         _reset: function() {
             var that = this,
                 element = that.element,
-                form = element.closest("form");
+                formId = element.attr("form"),
+                form = formId ? $("#" + formId) : element.closest("form");
 
             if (form[0]) {
                 that._resetHandler = function() {
@@ -891,7 +928,9 @@ kendo_module({
                     return;
                 }
 
+                options.autoBind = false;
                 valueField = parent.options.dataValueField;
+
                 change = function() {
                     var value = that._selectedValue || that.value();
                     if (value) {
@@ -904,13 +943,14 @@ kendo_module({
                     }
 
                     that.enable();
+                    that._triggerCascade();
                 };
                 select = function() {
                     var dataItem = parent.dataItem(),
                         filterValue = dataItem ? parent._value(dataItem) : null,
                         expressions, filters;
 
-                    if (filterValue) {
+                    if (filterValue || filterValue === 0) {
                         expressions = that.dataSource.filter() || {};
                         removeFiltersForField(expressions, valueField);
                         filters = expressions.filters || [];
@@ -928,9 +968,8 @@ kendo_module({
                     } else {
                         that.enable(false);
                         that._clearSelection(parent);
+                        that._triggerCascade();
                     }
-
-                    that._triggerCascade();
                 };
 
                 parent.bind("cascade", function() { select(); });

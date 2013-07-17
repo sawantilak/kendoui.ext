@@ -1,35 +1,126 @@
 // Type definitions for Kendo UI
 
-module kendo {
-    declare function bind(selector: string, viewModel: any, namespace?: any): void;
-    declare function bind(element: JQuery, viewModel: any, namespace?: any): void;
-    declare function bind(element: Element, viewModel: any, namespace?: any): void;
-    declare function culture(value: string): void;
-    declare function culture(): string;
-    declare function destroy(selector: string): void;
-    declare function destroy(element: Element): void;
-    declare function destroy(element: JQuery): void;
-    declare function format(format: string, ...values: any[]): string;
-    declare function htmlEncode(value: string): string;
-    declare function init(selector: string, ...namespaces: any[]): void;
-    declare function init(element: JQuery, ...namespaces: any[]): void;
-    declare function init(element: Element, ...namespaces: any[]): void;
-    declare function observable(data: any): kendo.data.ObservableObject;
-    declare function parseDate(value: any, format?: string, culture?: string): Date;
-    declare function parseFloat(value: any, culture?: string): number;
-    declare function parseInt(value: any, culture?: string): number;
-    declare function render(template:(data: any) => string, data: any[]): string;
-    declare function template(template: string, options?: TemplateOptions): (data: any) => string;
-    declare function touchScroller(selector: string): void;
-    declare function touchScroller(element: Element): void;
-    declare function touchScroller(element: JQuery): void;
-    declare function toString(value: number, format: string): string;
-    declare function toString(value: Date, format: string): string;
-    declare function unbind(selector: string): void;
-    declare function unbind(element: JQuery): void;
-    declare function unbind(element: Element): void;
+declare module kendo {
+    function bind(selector: string, viewModel: any, namespace?: any): void;
+    function bind(element: JQuery, viewModel: any, namespace?: any): void;
+    function bind(element: Element, viewModel: any, namespace?: any): void;
+    function culture(value: string): void;
+    function culture(): {
+        name: string;
+        calendar: {
+            AM: string[];
+            PM: string[];
+            days: {
+                names: string[];
+                namesAbbr: string[];
+                namesShort: string[];
+                firstDay: number;
+            };
+            months: {
+                names: string[];
+                namesAbbr: string[];
+            };
+            patterns: {
+                D: string;
+                F: string;
+                G: string;
+                M: string;
+                T: string;
+                Y: string;
+                d: string;
+                g: string;
+                m: string;
+                s: string;
+                t: string;
+                u: string;
+                y: string;
+            };
+            twoDigitYearMax: number;
+        };
+        calendars: {
+            standard: {
+                AM: string[];
+                PM: string[];
+                days: {
+                    names: string[];
+                    namesAbbr: string[];
+                    namesShort: string[];
+                    firstDay: number;
+                };
+                months: {
+                    names: string[];
+                    namesAbbr: string[];
+                };
+                patterns: {
+                    D: string;
+                    F: string;
+                    G: string;
+                    M: string;
+                    T: string;
+                    Y: string;
+                    d: string;
+                    g: string;
+                    m: string;
+                    s: string;
+                    t: string;
+                    u: string;
+                    y: string;
+                };
+                twoDigitYearMax: number;
+            };
+        };
+        numberFormat: {
+            currency: {
+                decimals: number;
+                groupSize: number[];
+                pattern: string[];
+                symbol: string;
+            };
+            decimals: number;
+            groupSize: number[];
+            pattern: string[];
+            percent: {
+                decimals: number;
+                groupSize: number[];
+                pattern: string[];
+                symbol: string;
+            };
+        };
+    };
+    function destroy(selector: string): void;
+    function destroy(element: Element): void;
+    function destroy(element: JQuery): void;
+    function format(format: string, ...values: any[]): string;
 
-    declare var keys: {
+    function fx(selector: string): effects.Element;
+    function fx(element: Element): effects.Element;
+    function fx(element: JQuery): effects.Element;
+
+    function htmlEncode(value: string): string;
+    function init(selector: string, ...namespaces: any[]): void;
+    function init(element: JQuery, ...namespaces: any[]): void;
+    function init(element: Element, ...namespaces: any[]): void;
+    function observable(data: any): kendo.data.ObservableObject;
+    function observableHierarchy(array: any[]): kendo.data.ObservableArray;
+    function parseDate(value: any, format?: string, culture?: string): Date;
+    function parseFloat(value: any, culture?: string): number;
+    function parseInt(value: any, culture?: string): number;
+    function render(template:(data: any) => string, data: any[]): string;
+    function stringify(value: Object): string;
+    function template(template: string, options?: TemplateOptions): (data: any) => string;
+    function touchScroller(selector: string): void;
+    function touchScroller(element: Element): void;
+    function touchScroller(element: JQuery): void;
+    function toString(value: number, format: string): string;
+    function toString(value: Date, format: string): string;
+    function unbind(selector: string): void;
+    function unbind(element: JQuery): void;
+    function unbind(element: Element): void;
+    function guid(): string;
+
+    var ns: string;
+
+    var keys: {
         INSERT: number;
         DELETE: number;
         BACKSPACE: number;
@@ -50,7 +141,7 @@ module kendo {
         F12: number;
     }
 
-    declare var support: {
+    var support: {
         touch: bool;
         pointers: bool;
         scrollbar(): number;
@@ -83,39 +174,195 @@ module kendo {
         useWithBlock?: bool;
     }
 
-    class Observable {
+    class Class {
+        static fn: Class;
+        static extend(prototype: Object): Class;
+    }
+
+    class Observable extends Class {
+        static fn: Observable;
+        static extend(prototype: Object): Observable;
+
         bind(eventName: string, handler: Function): Observable;
         one(eventName: string, handler: Function): Observable;
         trigger(eventName: string, e?: any): bool;
         unbind(eventName: string, handler?: any): Observable;
     }
 
-    class View {
-        constructor(contents: string);
+    interface ViewOptions {
+        tagName?: string;
+        wrap?: bool;
+        model?: Object;
+        init?: (e: ViewEvent) => void;
+        show?: (e: ViewEvent) => void;
+        hide?: (e: ViewEvent) => void;
+    }
+
+    interface ViewEvent {
+        sender: View;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
+    }
+
+    class View extends Observable {
+        constructor(element: Element, options?: ViewOptions);
+        constructor(element: string, options?: ViewOptions);
+        init(element: Element, options?: ViewOptions): void;
+        init(element: string, options?: ViewOptions): void;
         render(container?: any): JQuery;
         destroy(): void;
+        element: JQuery;
+        content: any;
+        tagName: string;
+        model: Object;
     }
 
     class Layout extends View {
         showIn(selector: string, view: View);
+        regions: { [selector: string]: View; };
     }
+
+    class History extends Observable {
+        start(options): void;
+        stop(): void;
+        current: string;
+        root: string;
+        change(callback): void;
+        navigate(location: string, silent?: bool);
+    }
+
+    var history: History;
 
     interface RouterOptions {
-        init?: Function;
-        routeMissing?: Function;
-        change?: Function;
+        init?: (e: RouterEvent) => void;
+        routeMissing?: (e: RouterEvent) => void;
+        change?: (e: RouterEvent) => void;
     }
 
-    class Router {
+    interface RouterEvent {
+        sender: Router;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
+        url: string;
+    }
+
+    class Route extends Class {
+        route: RegExp;
+        callback(url: string): void;
+        worksWith(url: string): void;
+    }
+
+    class Router extends Observable {
         constructor(options?: RouterOptions);
+        init(options?: RouterOptions): void;
         start(): void;
         destroy(): void;
         route(route: string, callback: Function): void;
-        navigate(location: string, silent: bool);
+        navigate(location: string, silent?: bool);
+        routes: Route[];
+    }
+
+}
+
+declare module kendo.effects {
+    interface Element {
+        expand(direction: string): effects.Expand;
+        expandHorizontal(): effects.Expand;
+        expandVertical(): effects.Expand;
+        fade(direction: string): effects.Fade;
+        fadeIn(): effects.Fade;
+        fadeOut(): effects.Fade;
+        flip(axis: string, face: JQuery, back: JQuery): effects.Flip;
+        flipHorizontal(face: JQuery, back: JQuery): effects.Flip;
+        flipVertical(face: JQuery, back: JQuery): effects.Flip;
+        pageturn(axis: string, face: JQuery, back: JQuery): effects.PageTurn;
+        pageturnHorizontal(face: JQuery, back: JQuery): effects.PageTurn;
+        pageturnVertical(face: JQuery, back: JQuery): effects.PageTurn;
+        slideIn(direction: string): effects.SlideIn;
+        slideInDown(): effects.SlideIn;
+        slideInLeft(): effects.SlideIn;
+        slideInRight(): effects.SlideIn;
+        slideInUp(): effects.SlideIn;
+        tile(direction: string, previous: JQuery): effects.Tile;
+        tileDown(previous: JQuery): effects.Tile;
+        tileLeft(previous: JQuery): effects.Tile;
+        tileRight(previous: JQuery): effects.Tile;
+        tileUp(previous: JQuery): effects.Tile;
+        transfer(target: JQuery): effects.Transfer;
+        zoom(direction: string): effects.Zoom;
+        zoomIn(): effects.Zoom;
+        zoomOut(): effects.Zoom;
+    }
+
+    interface Effect {
+        play(): JQueryPromise;
+        reverse(): JQueryPromise;
+        duration(value: number): Effect;
+        add(effect: Effect): Effect;
+        stop(): Effect;
+    }
+
+    interface Expand extends Effect {
+        duration(value: number): Expand;
+        direction(value: string): Expand;
+        stop(): Expand;
+        add(effect: Effect): Expand;
+    }
+
+    interface Fade extends Effect {
+        duration(value: number): Fade;
+        direction(value: string): Fade;
+        stop(): Fade;
+        add(effect: Effect): Fade;
+        startValue(value: number): Fade;
+        endValue(value: number): Fade;
+    }
+
+    interface Flip extends Effect {
+        duration(value: number): Flip;
+        direction(value: string): Flip;
+        stop(): Flip;
+        add(effect: Effect): Flip;
+    }
+
+    interface PageTurn extends Effect {
+        duration(value: number): PageTurn;
+        direction(value: string): PageTurn;
+        stop(): PageTurn;
+        add(effect: Effect): PageTurn;
+    }
+
+    interface SlideIn extends Effect {
+        duration(value: number): SlideIn;
+        direction(value: string): SlideIn;
+        stop(): SlideIn;
+        add(effect: Effect): SlideIn;
+    }
+
+    interface Tile extends Effect {
+        duration(value: number): Tile;
+        direction(value: string): Tile;
+        stop(): Tile;
+        add(effect: Effect): Tile;
+    }
+
+    interface Transfer extends Effect {
+        duration(value: number): Transfer;
+        stop(): Transfer;
+        add(effect: Effect): Transfer;
+    }
+
+    interface Zoom extends Effect {
+        duration(value: number): Zoom;
+        direction(value: string): Zoom;
+        stop(): Zoom;
+        add(effect: Effect): Zoom;
+        startValue(value: number): Zoom;
+        endValue(value: number): Zoom;
     }
 }
 
-module kendo.data {
+declare module kendo.data {
     interface ObservableObjectEvent {
         sender?: ObservableObject;
         field?: string;
@@ -126,8 +373,54 @@ module kendo.data {
         preventDefault?: Function;
     }
 
+
+    class Binding extends Observable {
+        source: any;
+        parents: any[];
+        path: string;
+        dependencies: { [path: string]: bool; };
+        observable: bool;
+        constructor(parents: any[], path: string);
+        change(e): void;
+        start(source): void;
+        stop(source): void;
+        get (): any;
+        set (value: any): void;
+        destroy(): void;
+    }
+
+    class EventBinding extends Binding {
+        get (): void;
+    }
+
+    class TemplateBinding extends Binding {
+        constructor(source, path, template);
+        render(value): string;
+    }
+
+    module binders { };
+
+    class Binder extends Class {
+        static fn: Binder;
+        static extend(prototype: Object): Binder;
+
+        element: any;
+        bindings: { [key: string]: Binding; };
+        constructor(element: any, bindings: { [key: string]: Binding; }, options?: BinderOptions);
+        init(element: any, bindings: { [key: string]: Binding; }, options?: BinderOptions): void;
+        bind(binding: Binding, attribute: string);
+        destroy(): void;
+        refresh(): void;
+        refresh(attribute: string): void;
+        options: BinderOptions;
+    }
+
+    interface BinderOptions {
+    }
+
     class ObservableObject extends Observable{
         constructor(value?: any);
+        init(value?: any): void;
         get(name: string): any;
         parent(): ObservableObject;
         set(name: string, value: any): void;
@@ -141,10 +434,13 @@ module kendo.data {
         fields: DataSourceSchemaModelFields;
         defaults: any;
         constructor(data?: any);
+        init(data?: any):void;
         dirty: bool;
         id: any;
         editable(field: string): bool;
         isNew(): bool;
+        static idField: string;
+        static fields: DataSourceSchemaModelFields;
         static define(options: DataSourceSchemaModelWithFieldsObject): {
             idField: string;
             fields: DataSourceSchemaModelFields;
@@ -154,6 +450,34 @@ module kendo.data {
             idField: string;
             fields: DataSourceSchemaModelFields;
             new (data?: any): Model;
+        };
+    }
+
+    class SchedulerEvent extends Model {
+        constructor(data?: any);
+        init(data?: any): void;
+
+        description: string;
+        end: Date;
+        endTimezone: string;
+        isAllDay: bool;
+        id: any;
+        start: Date;
+        startTimezone: string;
+        recurrenceId: any;
+        recurrenceRule: string;
+        recurrenceException: string;
+
+        static define(options: DataSourceSchemaModelWithFieldsObject): {
+            idField: string;
+            fields: DataSourceSchemaModelFields;
+            new (data?: any): SchedulerEvent;
+        };
+
+        static define(options: DataSourceSchemaModelWithFieldsArray): {
+            idField: string;
+            fields: DataSourceSchemaModelFields;
+            new (data?: any): SchedulerEvent;
         };
     }
 
@@ -168,8 +492,22 @@ module kendo.data {
         parentNode(): Node;
     }
 
+    class SchedulerDataSource extends DataSource {
+        add(model: Object): kendo.data.SchedulerEvent;
+        add(model: kendo.data.SchedulerEvent): kendo.data.SchedulerEvent;
+        at(index: number): kendo.data.SchedulerEvent;
+        cancelChanges(model?: kendo.data.SchedulerEvent): void;
+        get(id: any): kendo.data.SchedulerEvent;
+        getByUid(uid: string): kendo.data.SchedulerEvent;
+        indexOf(value: kendo.data.SchedulerEvent): number;
+        insert(index: number, model: kendo.data.SchedulerEvent): kendo.data.SchedulerEvent;
+        insert(index: number, model: Object): kendo.data.SchedulerEvent;
+        remove(model: kendo.data.SchedulerEvent): void;
+    }
+
     class HierarchicalDataSource extends DataSource {
         constructor(options?: HierarchicalDataSourceOptions);
+        init(options?: HierarchicalDataSourceOptions): void;
     }
 
     interface HierarchicalDataSourceOptions extends DataSourceOptions {
@@ -261,6 +599,7 @@ module kendo.data {
 
     interface DataSourceSchemaModelField {
         field?: string;
+        from?: string;
         defaultValue?: any;
         editable?: bool;
         nullable?: bool;
@@ -277,6 +616,7 @@ module kendo.data {
 
     class ObservableArray extends Observable {
         constructor(array?: any[]);
+        init(array?: any[]): void;
         length: number;
         join(separator: string): string;
         parent(): ObservableObject;
@@ -288,10 +628,29 @@ module kendo.data {
         shift(): any;
         toJSON(): any[];
         unshift(...items: any[]): number;
+        wrapAll(source, target): any;
+        wrap(object, parent): any;
+        indexOf(item: any): number;
+        forEach(callback: (item, index: number, source: ObservableArray) => void ): void;
+        map(callback: (item, index: number, source: ObservableArray) => any): any[];
+        filter(callback: (item, index: number, source: ObservableArray) => bool): any[];
+        find(callback: (item, index: number, source: ObservableArray) => bool): any;
+        every(callback: (item, index: number, source: ObservableArray) => bool): bool;
+        some(callback: (item, index: number, source: ObservableArray) => bool): bool;
+        remove(item): void;
+    }
+
+    interface ObservableArrayEvent {
+        field?: string;
+        action?: string;
+        index?: number;
+        items?: kendo.data.Model[];
     }
 
     class DataSource extends Observable{
         constructor(options?: DataSourceOptions);
+        init(options?: DataSourceOptions): void;
+        static create(options?: DataSourceOptions): DataSource;
         options: DataSourceOptions;
         add(model: Object): kendo.data.Model;
         add(model: kendo.data.Model): kendo.data.Model;
@@ -477,7 +836,7 @@ module kendo.data {
         transport?: DataSourceTransport;
         type?: string;
         change? (e: DataSourceChangeEvent): void;
-        error?(e: DataSourceEvent): void;
+        error?(e: DataSourceErrorEvent): void;
         sync?(e: DataSourceEvent): void;
         requestStart?(e: DataSourceRequestStartEvent): void;
         requestEnd?(e: DataSourceRequestEndEvent): void;
@@ -487,12 +846,31 @@ module kendo.data {
         sender?: DataSource;
     }
 
+    interface DataSourceItemOrGroup {
+    }
+
+    interface DataSourceGroup extends DataSourceItemOrGroup {
+        aggregates: any[];
+        field: string;
+        hasSubgroups: bool;
+        items: DataSourceItemOrGroup[];
+        value: any;
+    }
+
     interface DataSourceChangeEvent extends DataSourceEvent {
         field?: string;
         value?: Model;
         action?: string;
         index?: number;
-        items?: Model[];
+        items?: DataSourceItemOrGroup[];
+        node?: any;
+    }
+
+    interface DataSourceErrorEvent extends DataSourceEvent {
+        xhr: JQueryXHR;
+        status: string;
+        errorThrown: any;
+        errors?: any;
     }
 
     interface DataSourceRequestStartEvent extends DataSourceEvent {
@@ -504,12 +882,31 @@ module kendo.data {
     }
 }
 
-module kendo.ui {
-    declare function progress(container: JQuery, toggle: bool);
+declare module kendo.data.transports {
+    var odata : DataSourceTransport;
+}
+
+declare module kendo.ui {
+    function progress(container: JQuery, toggle: bool);
 
     class Widget extends Observable {
+        static fn: Widget;
+        static extend(prototype: Object): Widget;
+
+        constructor(element: Element, options?: any);
+        constructor(element: JQuery, options?: any);
+        constructor(selector: String, options?: any);
+        init(element: Element, options?: any): void;
+        init(element: JQuery, options?: any): void;
+        init(selector: String, options: Object): void;
         destroy(): void;
+        element: JQuery;
+        setOptions(options: Object): void;
     }
+
+    function plugin(widget: kendo.ui.Widget, register?: Object, prefix?: String);
+    function plugin(widget: any, register?: Object, prefix?: String);
+    function plugin(widget: new (element: Element, options: Object) => kendo.ui.Widget, register?: Object, prefix?: String);
 
     class Draggable extends kendo.ui.Widget{
         element: JQuery;
@@ -607,13 +1004,39 @@ module kendo.ui {
     }
 }
 
-module kendo.mobile {
-    declare function init(selector: string): void;
-    declare function init(element: JQuery): void;
-    declare function init(element: Element): void;
+declare module kendo.mobile {
+    function init(selector: string): void;
+    function init(element: JQuery): void;
+    function init(element: Element): void;
+
+    class Application extends Observable {
+        constructor(element?: any, options?: ApplicationOptions);
+        init(element?: any, options?: ApplicationOptions): void;
+        options: ApplicationOptions;
+        hideLoading(): void;
+        navigate(url: string, transition?: string): void;
+        scroller(): kendo.mobile.ui.Scroller;
+        showLoading(): void;
+        view(): kendo.mobile.ui.View;
+    }
+
+    interface ApplicationOptions {
+        hideAddressBar?: bool;
+        updateDocumentTitle?: bool;
+        initial?: string;
+        layout?: string;
+        loading?: string;
+        platform?: string;
+        serverNavigation?: bool;
+        transition?: string;
+    }
+
+    interface ApplicationEvent {
+        sender: Application;
+    }
 }
 
-module kendo.mobile.ui {
+declare module kendo.mobile.ui {
 
     class Widget extends kendo.ui.Widget {
     }
@@ -638,15 +1061,24 @@ module kendo.mobile.ui {
     }
 }
 
-module kendo.ui {
+declare module kendo.dataviz.ui {
+    function registerTheme(name: string, options: any);
+
+    function plugin(widget: new (element: Element, options: Object) => kendo.ui.Widget);
+}
+
+declare module kendo.ui {
     class AutoComplete extends kendo.ui.Widget {
+        static fn: AutoComplete;
+        static extend(proto: Object): AutoComplete;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: AutoCompleteOptions);
         options: AutoCompleteOptions;
         dataSource: kendo.data.DataSource;
         close(): void;
-        dataItem(index: number): any;
+        dataItem(index?: number): any;
         destroy(): void;
         enable(enable: bool): void;
         readonly(readonly: bool): void;
@@ -676,6 +1108,7 @@ module kendo.ui {
     }
 
     interface AutoCompleteOptions {
+        name?: string;
         animation?: AutoCompleteAnimation;
         dataSource?: any;
         dataTextField?: string;
@@ -699,6 +1132,8 @@ module kendo.ui {
 
     interface AutoCompleteEvent {
         sender: AutoComplete;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface AutoCompleteChangeEvent extends AutoCompleteEvent {
@@ -719,6 +1154,9 @@ module kendo.ui {
 
 
     class Calendar extends kendo.ui.Widget {
+        static fn: Calendar;
+        static extend(proto: Object): Calendar;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: CalendarOptions);
@@ -745,6 +1183,7 @@ module kendo.ui {
     }
 
     interface CalendarOptions {
+        name?: string;
         culture?: string;
         dates?: any;
         depth?: string;
@@ -761,10 +1200,15 @@ module kendo.ui {
 
     interface CalendarEvent {
         sender: Calendar;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
 
     class ColorPalette extends kendo.ui.Widget {
+        static fn: ColorPalette;
+        static extend(proto: Object): ColorPalette;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: ColorPaletteOptions);
@@ -781,6 +1225,7 @@ module kendo.ui {
     }
 
     interface ColorPaletteOptions {
+        name?: string;
         palette?: any;
         columns?: number;
         tileSize?: ColorPaletteTileSize;
@@ -790,10 +1235,15 @@ module kendo.ui {
 
     interface ColorPaletteEvent {
         sender: ColorPalette;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
 
     class ColorPicker extends kendo.ui.Widget {
+        static fn: ColorPicker;
+        static extend(proto: Object): ColorPicker;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: ColorPickerOptions);
@@ -813,11 +1263,12 @@ module kendo.ui {
     }
 
     interface ColorPickerOptions {
+        name?: string;
         buttons?: bool;
         columns?: number;
         tileSize?: ColorPickerTileSize;
         messages?: any;
-        palette?: string;
+        palette?: any;
         opacity?: bool;
         preview?: bool;
         toolIcon?: string;
@@ -830,17 +1281,22 @@ module kendo.ui {
 
     interface ColorPickerEvent {
         sender: ColorPicker;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
 
     class ComboBox extends kendo.ui.Widget {
+        static fn: ComboBox;
+        static extend(proto: Object): ComboBox;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: ComboBoxOptions);
         options: ComboBoxOptions;
         dataSource: kendo.data.DataSource;
         close(): void;
-        dataItem(index: number): any;
+        dataItem(index?: number): any;
         destroy(): void;
         enable(enable: bool): void;
         readonly(readonly: bool): void;
@@ -874,6 +1330,7 @@ module kendo.ui {
     }
 
     interface ComboBoxOptions {
+        name?: string;
         animation?: ComboBoxAnimation;
         autoBind?: bool;
         cascadeFrom?: string;
@@ -890,7 +1347,7 @@ module kendo.ui {
         minLength?: number;
         placeholder?: string;
         suggest?: bool;
-        template?: string;
+        template?: any;
         text?: string;
         value?: string;
         change?(e: ComboBoxEvent): void;
@@ -903,6 +1360,8 @@ module kendo.ui {
 
     interface ComboBoxEvent {
         sender: ComboBox;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface ComboBoxSelectEvent extends ComboBoxEvent {
@@ -911,6 +1370,9 @@ module kendo.ui {
 
 
     class DatePicker extends kendo.ui.Widget {
+        static fn: DatePicker;
+        static extend(proto: Object): DatePicker;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: DatePickerOptions);
@@ -949,7 +1411,9 @@ module kendo.ui {
     }
 
     interface DatePickerOptions {
+        name?: string;
         animation?: DatePickerAnimation;
+        ARIATemplate?: string;
         culture?: string;
         dates?: any;
         depth?: string;
@@ -968,10 +1432,15 @@ module kendo.ui {
 
     interface DatePickerEvent {
         sender: DatePicker;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
 
     class DateTimePicker extends kendo.ui.Widget {
+        static fn: DateTimePicker;
+        static extend(proto: Object): DateTimePicker;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: DateTimePickerOptions);
@@ -1011,7 +1480,9 @@ module kendo.ui {
     }
 
     interface DateTimePickerOptions {
+        name?: string;
         animation?: DateTimePickerAnimation;
+        ARIATemplate?: string;
         culture?: string;
         dates?: any;
         depth?: string;
@@ -1032,6 +1503,8 @@ module kendo.ui {
 
     interface DateTimePickerEvent {
         sender: DateTimePicker;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface DateTimePickerCloseEvent extends DateTimePickerEvent {
@@ -1044,13 +1517,16 @@ module kendo.ui {
 
 
     class DropDownList extends kendo.ui.Widget {
+        static fn: DropDownList;
+        static extend(proto: Object): DropDownList;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: DropDownListOptions);
         options: DropDownListOptions;
         dataSource: kendo.data.DataSource;
         close(): void;
-        dataItem(index: number): any;
+        dataItem(index?: number): any;
         destroy(): void;
         enable(enable: bool): void;
         readonly(readonly: bool): void;
@@ -1065,6 +1541,8 @@ module kendo.ui {
         toggle(toggle: bool): void;
         value(): string;
         value(value: string): void;
+        list: any;
+        ul: any;
     }
 
     interface DropDownListAnimationClose {
@@ -1083,6 +1561,7 @@ module kendo.ui {
     }
 
     interface DropDownListOptions {
+        name?: string;
         animation?: DropDownListAnimation;
         autoBind?: bool;
         cascadeFrom?: string;
@@ -1095,7 +1574,7 @@ module kendo.ui {
         ignoreCase?: string;
         index?: number;
         optionLabel?: any;
-        template?: string;
+        template?: any;
         text?: string;
         value?: string;
         change?(e: DropDownListEvent): void;
@@ -1108,6 +1587,8 @@ module kendo.ui {
 
     interface DropDownListEvent {
         sender: DropDownList;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface DropDownListSelectEvent extends DropDownListEvent {
@@ -1116,6 +1597,9 @@ module kendo.ui {
 
 
     class Editor extends kendo.ui.Widget {
+        static fn: Editor;
+        static extend(proto: Object): Editor;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: EditorOptions);
@@ -1129,10 +1613,12 @@ module kendo.ui {
         getSelection(): Selection;
         paste(html: string): void;
         selectedHtml(): string;
+        refresh(): void;
         selectRange(range: Range): void;
         update(): void;
         value(): string;
         value(value: string): void;
+        body: any;
     }
 
     interface EditorImageBrowserMessages {
@@ -1221,6 +1707,7 @@ module kendo.ui {
     interface EditorToolItem {
         text?: string;
         value?: string;
+        context?: string;
     }
 
     interface EditorTool {
@@ -1236,6 +1723,7 @@ module kendo.ui {
     }
 
     interface EditorOptions {
+        name?: string;
         encoded?: bool;
         messages?: any;
         stylesheets?: any;
@@ -1251,6 +1739,8 @@ module kendo.ui {
 
     interface EditorEvent {
         sender: Editor;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface EditorExecuteEvent extends EditorEvent {
@@ -1264,6 +1754,9 @@ module kendo.ui {
 
 
     class FlatColorPicker extends kendo.ui.Widget {
+        static fn: FlatColorPicker;
+        static extend(proto: Object): FlatColorPicker;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: FlatColorPickerOptions);
@@ -1276,20 +1769,30 @@ module kendo.ui {
     }
 
     interface FlatColorPickerOptions {
+        name?: string;
         opacity?: bool;
         buttons?: bool;
         value?: string;
         preview?: bool;
         messages?: any;
-        change?(e: FlatColorPickerEvent): void;
+        change?(e: FlatColorPickerChangeEvent): void;
     }
 
     interface FlatColorPickerEvent {
         sender: FlatColorPicker;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
+    }
+
+    interface FlatColorPickerChangeEvent extends FlatColorPickerEvent {
+        value?: string;
     }
 
 
     class Grid extends kendo.ui.Widget {
+        static fn: Grid;
+        static extend(proto: Object): Grid;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: GridOptions);
@@ -1298,16 +1801,16 @@ module kendo.ui {
         addRow(): void;
         cancelChanges(): void;
         cancelRow(): void;
-        cellIndex(cell: any): void;
+        cellIndex(cell: any): number;
         clearSelection(): void;
         closeCell(): void;
-        collapseGroup(group: any): void;
+        collapseGroup(row: any): void;
         collapseRow(row: any): void;
-        dataItem(tr: any): void;
+        dataItem(row: any): kendo.data.ObservableObject;
         destroy(): void;
-        editCell(cell: any): void;
-        editRow(row: any): void;
-        expandGroup(group: any): void;
+        editCell(cell: JQuery): void;
+        editRow(row: JQuery): void;
+        expandGroup(row: any): void;
         expandRow(row: any): void;
         hideColumn(column: any): void;
         refresh(): void;
@@ -1316,9 +1819,13 @@ module kendo.ui {
         saveChanges(): void;
         saveRow(): void;
         select(): JQuery;
-        select(items: any): void;
+        select(rows: any): void;
         setDataSource(dataSource: kendo.data.DataSource): void;
         showColumn(column: any): void;
+        columns: any;
+        table: any;
+        tbody: any;
+        thead: any;
     }
 
     interface GridColumnMenuMessages {
@@ -1347,23 +1854,23 @@ module kendo.ui {
     }
 
     interface GridColumn {
+        aggregates?: any;
         attributes?: any;
         command?: GridColumnCommandItem[];
         encoded?: bool;
         field?: string;
         filterable?: GridColumnFilterable;
+        footerTemplate?: any;
         format?: string;
+        groupHeaderTemplate?: any;
+        groupFooterTemplate?: any;
         headerAttributes?: any;
-        headerTemplate?: string;
+        headerTemplate?: any;
         hidden?: bool;
         sortable?: bool;
-        template?: string;
-        aggregates?: any;
-        groupHeaderTemplate?: string;
-        groupFooterTemplate?: string;
-        footerTemplate?: string;
+        template?: any;
         title?: string;
-        width?: string;
+        width?: any;
         values?: any;
         menu?: bool;
     }
@@ -1373,7 +1880,7 @@ module kendo.ui {
         createAt?: string;
         destroy?: bool;
         mode?: string;
-        template?: string;
+        template?: any;
         update?: bool;
     }
 
@@ -1448,9 +1955,9 @@ module kendo.ui {
         of?: string;
         itemsPerPage?: string;
         first?: string;
-        previous?: string;
-        next?: string;
         last?: string;
+        next?: string;
+        previous?: string;
         refresh?: string;
     }
 
@@ -1477,51 +1984,54 @@ module kendo.ui {
 
     interface GridToolbarItem {
         name?: string;
-        template?: string;
+        template?: any;
         text?: string;
     }
 
     interface GridOptions {
-        altRowTemplate?: Function;
+        name?: string;
+        altRowTemplate?: any;
         autoBind?: bool;
         columns?: GridColumn[];
         columnMenu?: GridColumnMenu;
         dataSource?: any;
-        detailTemplate?: Function;
+        detailTemplate?: any;
         editable?: GridEditable;
         filterable?: GridFilterable;
-        reorderable?: bool;
-        resizable?: bool;
         groupable?: GridGroupable;
         height?: any;
         navigatable?: bool;
         pageable?: GridPageable;
-        rowTemplate?: Function;
+        reorderable?: bool;
+        resizable?: bool;
+        rowTemplate?: any;
         scrollable?: GridScrollable;
-        selectable?: string;
+        selectable?: any;
         sortable?: GridSortable;
         toolbar?: GridToolbarItem[];
         cancel?(e: GridCancelEvent): void;
-        change?(e: GridEvent): void;
+        change?(e: GridChangeEvent): void;
         columnHide?(e: GridColumnHideEvent): void;
+        columnMenuInit?(e: GridColumnMenuInitEvent): void;
         columnReorder?(e: GridColumnReorderEvent): void;
         columnResize?(e: GridColumnResizeEvent): void;
         columnShow?(e: GridColumnShowEvent): void;
-        dataBound?(e: GridEvent): void;
-        dataBinding?(e: GridEvent): void;
+        dataBinding?(e: GridDataBindingEvent): void;
+        dataBound?(e: GridDataBoundEvent): void;
         detailCollapse?(e: GridDetailCollapseEvent): void;
         detailExpand?(e: GridDetailExpandEvent): void;
         detailInit?(e: GridDetailInitEvent): void;
         edit?(e: GridEditEvent): void;
         filterMenuInit?(e: GridFilterMenuInitEvent): void;
-        columnMenuInit?(e: GridColumnMenuInitEvent): void;
         remove?(e: GridRemoveEvent): void;
         save?(e: GridSaveEvent): void;
-        saveChanges?(e: GridEvent): void;
+        saveChanges?(e: GridSaveChangesEvent): void;
     }
 
     interface GridEvent {
         sender: Grid;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface GridCancelEvent extends GridEvent {
@@ -1530,8 +2040,16 @@ module kendo.ui {
         preventDefault?: Function;
     }
 
+    interface GridChangeEvent extends GridEvent {
+    }
+
     interface GridColumnHideEvent extends GridEvent {
         column?: any;
+    }
+
+    interface GridColumnMenuInitEvent extends GridEvent {
+        container?: JQuery;
+        field?: string;
     }
 
     interface GridColumnReorderEvent extends GridEvent {
@@ -1542,29 +2060,35 @@ module kendo.ui {
 
     interface GridColumnResizeEvent extends GridEvent {
         column?: any;
-        oldWidth?: number;
         newWidth?: number;
+        oldWidth?: number;
     }
 
     interface GridColumnShowEvent extends GridEvent {
         column?: any;
     }
 
+    interface GridDataBindingEvent extends GridEvent {
+    }
+
+    interface GridDataBoundEvent extends GridEvent {
+    }
+
     interface GridDetailCollapseEvent extends GridEvent {
-        masterRow?: JQuery;
         detailRow?: JQuery;
+        masterRow?: JQuery;
     }
 
     interface GridDetailExpandEvent extends GridEvent {
-        masterRow?: JQuery;
         detailRow?: JQuery;
+        masterRow?: JQuery;
     }
 
     interface GridDetailInitEvent extends GridEvent {
-        masterRow?: JQuery;
-        detailRow?: JQuery;
-        detailCell?: JQuery;
         data?: kendo.data.ObservableObject;
+        detailCell?: JQuery;
+        detailRow?: JQuery;
+        masterRow?: JQuery;
     }
 
     interface GridEditEvent extends GridEvent {
@@ -1573,28 +2097,30 @@ module kendo.ui {
     }
 
     interface GridFilterMenuInitEvent extends GridEvent {
-        field?: any;
         container?: JQuery;
-    }
-
-    interface GridColumnMenuInitEvent extends GridEvent {
-        field?: any;
-        container?: JQuery;
+        field?: string;
     }
 
     interface GridRemoveEvent extends GridEvent {
-        row?: JQuery;
         model?: kendo.data.Model;
+        row?: JQuery;
     }
 
     interface GridSaveEvent extends GridEvent {
-        values?: any;
-        container?: JQuery;
         model?: kendo.data.Model;
+        row?: JQuery;
+        values?: any;
+    }
+
+    interface GridSaveChangesEvent extends GridEvent {
+        preventDefault?: Function;
     }
 
 
     class ListView extends kendo.ui.Widget {
+        static fn: ListView;
+        static extend(proto: Object): ListView;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: ListViewOptions);
@@ -1614,11 +2140,12 @@ module kendo.ui {
     }
 
     interface ListViewOptions {
+        name?: string;
         autoBind?: bool;
         dataSource?: any;
         editTemplate?: Function;
         navigatable?: bool;
-        selectable?: string;
+        selectable?: any;
         template?: Function;
         altTemplate?: Function;
         cancel?(e: ListViewCancelEvent): void;
@@ -1631,6 +2158,8 @@ module kendo.ui {
 
     interface ListViewEvent {
         sender: ListView;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface ListViewCancelEvent extends ListViewEvent {
@@ -1651,6 +2180,9 @@ module kendo.ui {
 
 
     class Menu extends kendo.ui.Widget {
+        static fn: Menu;
+        static extend(proto: Object): Menu;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: MenuOptions);
@@ -1681,6 +2213,7 @@ module kendo.ui {
     }
 
     interface MenuOptions {
+        name?: string;
         animation?: MenuAnimation;
         closeOnClick?: bool;
         direction?: string;
@@ -1697,6 +2230,8 @@ module kendo.ui {
 
     interface MenuEvent {
         sender: Menu;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface MenuCloseEvent extends MenuEvent {
@@ -1721,6 +2256,9 @@ module kendo.ui {
 
 
     class MultiSelect extends kendo.ui.Widget {
+        static fn: MultiSelect;
+        static extend(proto: Object): MultiSelect;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: MultiSelectOptions);
@@ -1757,6 +2295,7 @@ module kendo.ui {
     }
 
     interface MultiSelectOptions {
+        name?: string;
         animation?: MultiSelectAnimation;
         autoBind?: bool;
         dataSource?: any;
@@ -1783,6 +2322,8 @@ module kendo.ui {
 
     interface MultiSelectEvent {
         sender: MultiSelect;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface MultiSelectSelectEvent extends MultiSelectEvent {
@@ -1791,6 +2332,9 @@ module kendo.ui {
 
 
     class NumericTextBox extends kendo.ui.Widget {
+        static fn: NumericTextBox;
+        static extend(proto: Object): NumericTextBox;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: NumericTextBoxOptions);
@@ -1810,6 +2354,7 @@ module kendo.ui {
     }
 
     interface NumericTextBoxOptions {
+        name?: string;
         culture?: string;
         decimals?: number;
         downArrowText?: string;
@@ -1827,10 +2372,15 @@ module kendo.ui {
 
     interface NumericTextBoxEvent {
         sender: NumericTextBox;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
 
     class Pager extends kendo.ui.Widget {
+        static fn: Pager;
+        static extend(proto: Object): Pager;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: PagerOptions);
@@ -1857,6 +2407,7 @@ module kendo.ui {
     }
 
     interface PagerOptions {
+        name?: string;
         autoBind?: bool;
         buttonCount?: number;
         dataSource?: any;
@@ -1874,10 +2425,15 @@ module kendo.ui {
 
     interface PagerEvent {
         sender: Pager;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
 
     class PanelBar extends kendo.ui.Widget {
+        static fn: PanelBar;
+        static extend(proto: Object): PanelBar;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: PanelBarOptions);
@@ -1911,6 +2467,7 @@ module kendo.ui {
     }
 
     interface PanelBarOptions {
+        name?: string;
         animation?: PanelBarAnimation;
         expandMode?: string;
         activate?(e: PanelBarActivateEvent): void;
@@ -1923,6 +2480,8 @@ module kendo.ui {
 
     interface PanelBarEvent {
         sender: PanelBar;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface PanelBarActivateEvent extends PanelBarEvent {
@@ -1953,6 +2512,9 @@ module kendo.ui {
 
 
     class RangeSlider extends kendo.ui.Widget {
+        static fn: RangeSlider;
+        static extend(proto: Object): RangeSlider;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: RangeSliderOptions);
@@ -1970,6 +2532,7 @@ module kendo.ui {
     }
 
     interface RangeSliderOptions {
+        name?: string;
         largeStep?: number;
         max?: number;
         min?: number;
@@ -1985,6 +2548,8 @@ module kendo.ui {
 
     interface RangeSliderEvent {
         sender: RangeSlider;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface RangeSliderChangeEvent extends RangeSliderEvent {
@@ -1996,7 +2561,155 @@ module kendo.ui {
     }
 
 
+    class Scheduler extends kendo.ui.Widget {
+        static fn: Scheduler;
+        static extend(proto: Object): Scheduler;
+
+        element: JQuery;
+        wrapper: JQuery;
+        constructor(element: Element, options?: SchedulerOptions);
+        options: SchedulerOptions;
+        dataSource: kendo.data.DataSource;
+        addEvent(data: any): void;
+        cancelEvent(): void;
+        date(): Date;
+        date(value?: Date): void;
+        destroy(): void;
+        editEvent(event: any): void;
+        removeEvent(event: any): void;
+        saveEvent(): void;
+        setDataSource(dataSource: kendo.data.SchedulerDataSource): void;
+        view(): kendo.ui.SchedulerView;
+        view(type?: string): void;
+    }
+
+    interface SchedulerEditable {
+        confirmation?: any;
+        create?: bool;
+        destroy?: bool;
+        resize?: bool;
+        template?: any;
+        update?: bool;
+    }
+
+    interface SchedulerGroup {
+        resources?: any;
+        orientation?: string;
+    }
+
+    interface SchedulerResource {
+        dataColorField?: string;
+        dataSource?: any;
+        dataTextField?: string;
+        dataValueField?: string;
+        field?: string;
+        multiple?: bool;
+        name?: string;
+        title?: string;
+        valuePrimitive?: bool;
+    }
+
+    interface SchedulerViewEditable {
+        create?: bool;
+        destroy?: bool;
+        update?: bool;
+    }
+
+    interface SchedulerViewGroup {
+        orientation?: string;
+    }
+
+    interface SchedulerView {
+        allDayEventTemplate?: any;
+        allDaySlot?: bool;
+        dateHeaderTemplate?: any;
+        dayTemplate?: any;
+        editable?: SchedulerViewEditable;
+        endTime?: Date;
+        eventHeight?: number;
+        eventTemplate?: any;
+        eventTimeTemplate?: any;
+        group?: SchedulerViewGroup;
+        majorTick?: number;
+        majorTimeHeaderTemplate?: any;
+        minorTickCount?: number;
+        minorTimeHeaderTemplate?: any;
+        selected?: bool;
+        selectedDateFormat?: string;
+        startTime?: Date;
+        title?: string;
+        type?: string;
+    }
+
+    interface SchedulerOptions {
+        name?: string;
+        allDayEventTemplate?: any;
+        allDaySlot?: bool;
+        dataSource?: any;
+        date?: Date;
+        dateHeaderTemplate?: any;
+        editable?: SchedulerEditable;
+        endTime?: Date;
+        eventTemplate?: any;
+        group?: SchedulerGroup;
+        height?: any;
+        majorTick?: number;
+        majorTimeHeaderTemplate?: any;
+        minorTickCount?: number;
+        minorTimeHeaderTemplate?: any;
+        resources?: SchedulerResource[];
+        startTime?: Date;
+        timezone?: string;
+        views?: SchedulerView[];
+        width?: any;
+        cancel?(e: SchedulerCancelEvent): void;
+        dataBinding?(e: SchedulerDataBindingEvent): void;
+        dataBound?(e: SchedulerDataBoundEvent): void;
+        edit?(e: SchedulerEditEvent): void;
+        remove?(e: SchedulerRemoveEvent): void;
+        save?(e: SchedulerSaveEvent): void;
+    }
+
+    interface SchedulerEvent {
+        sender: Scheduler;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
+    }
+
+    interface SchedulerCancelEvent extends SchedulerEvent {
+        container?: JQuery;
+        event?: kendo.data.SchedulerEvent;
+        preventDefault?: Function;
+    }
+
+    interface SchedulerDataBindingEvent extends SchedulerEvent {
+    }
+
+    interface SchedulerDataBoundEvent extends SchedulerEvent {
+    }
+
+    interface SchedulerEditEvent extends SchedulerEvent {
+        container?: JQuery;
+        event?: kendo.data.SchedulerEvent;
+        preventDefault?: Function;
+    }
+
+    interface SchedulerRemoveEvent extends SchedulerEvent {
+        event?: kendo.data.SchedulerEvent;
+        preventDefault?: Function;
+    }
+
+    interface SchedulerSaveEvent extends SchedulerEvent {
+        container?: JQuery;
+        event?: kendo.data.SchedulerEvent;
+        preventDefault?: Function;
+    }
+
+
     class Slider extends kendo.ui.Widget {
+        static fn: Slider;
+        static extend(proto: Object): Slider;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: SliderOptions);
@@ -2014,6 +2727,7 @@ module kendo.ui {
     }
 
     interface SliderOptions {
+        name?: string;
         decreaseButtonTitle?: string;
         increaseButtonTitle?: string;
         largeStep?: number;
@@ -2031,6 +2745,8 @@ module kendo.ui {
 
     interface SliderEvent {
         sender: Slider;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface SliderChangeEvent extends SliderEvent {
@@ -2043,6 +2759,9 @@ module kendo.ui {
 
 
     class Splitter extends kendo.ui.Widget {
+        static fn: Splitter;
+        static extend(proto: Object): Splitter;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: SplitterOptions);
@@ -2069,6 +2788,7 @@ module kendo.ui {
     }
 
     interface SplitterOptions {
+        name?: string;
         orientation?: string;
         panes?: SplitterPane[];
         collapse?(e: SplitterCollapseEvent): void;
@@ -2080,6 +2800,8 @@ module kendo.ui {
 
     interface SplitterEvent {
         sender: Splitter;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface SplitterCollapseEvent extends SplitterEvent {
@@ -2096,11 +2818,13 @@ module kendo.ui {
 
 
     class TabStrip extends kendo.ui.Widget {
+        static fn: TabStrip;
+        static extend(proto: Object): TabStrip;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: TabStripOptions);
         options: TabStripOptions;
-        activateTab(item: string): bool;
         append(tab: string): kendo.ui.TabStrip;
         contentElement(itemIndex: number): Element;
         contentHolder(itemIndex: number): Element;
@@ -2110,10 +2834,12 @@ module kendo.ui {
         enable(element: string, enable?: bool): kendo.ui.TabStrip;
         insertAfter(item: string, referenceTab: string): kendo.ui.TabStrip;
         insertBefore(item: string, referenceTab: string): kendo.ui.TabStrip;
+        items(): HTMLCollection;
         reload(element: string): kendo.ui.TabStrip;
-        remove(element: string): kendo.ui.TabStrip;
+        remove(element: any): kendo.ui.TabStrip;
         select(): JQuery;
         select(element: any): void;
+        tabGroup: any;
     }
 
     interface TabStripAnimationClose {
@@ -2133,6 +2859,7 @@ module kendo.ui {
     }
 
     interface TabStripOptions {
+        name?: string;
         animation?: TabStripAnimation;
         collapsible?: bool;
         dataContentField?: string;
@@ -2149,6 +2876,8 @@ module kendo.ui {
 
     interface TabStripEvent {
         sender: TabStrip;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface TabStripActivateEvent extends TabStripEvent {
@@ -2173,6 +2902,9 @@ module kendo.ui {
 
 
     class TimePicker extends kendo.ui.Widget {
+        static fn: TimePicker;
+        static extend(proto: Object): TimePicker;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: TimePickerOptions);
@@ -2206,6 +2938,7 @@ module kendo.ui {
     }
 
     interface TimePickerOptions {
+        name?: string;
         animation?: TimePickerAnimation;
         culture?: string;
         dates?: any;
@@ -2222,16 +2955,22 @@ module kendo.ui {
 
     interface TimePickerEvent {
         sender: TimePicker;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
 
     class Tooltip extends kendo.ui.Widget {
+        static fn: Tooltip;
+        static extend(proto: Object): Tooltip;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: TooltipOptions);
         options: TooltipOptions;
         show(element: JQuery): void;
         hide(): void;
+        refresh(): void;
         target(): JQuery;
     }
 
@@ -2255,6 +2994,7 @@ module kendo.ui {
     }
 
     interface TooltipOptions {
+        name?: string;
         autoHide?: bool;
         animation?: TooltipAnimation;
         content?: TooltipContent;
@@ -2275,6 +3015,8 @@ module kendo.ui {
 
     interface TooltipEvent {
         sender: Tooltip;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface TooltipRequestStartEvent extends TooltipEvent {
@@ -2289,30 +3031,34 @@ module kendo.ui {
 
 
     class TreeView extends kendo.ui.Widget {
+        static fn: TreeView;
+        static extend(proto: Object): TreeView;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: TreeViewOptions);
         options: TreeViewOptions;
         dataSource: kendo.data.DataSource;
-        append(nodeData: any, parentNode?: Element): void;
+        append(nodeData: any, parentNode?: JQuery): void;
         collapse(nodes: any): void;
         dataItem(node: any): kendo.data.Node;
         destroy(): void;
-        detach(node: string): JQuery;
-        enable(nodes: string, enable?: bool): void;
+        detach(node: any): JQuery;
+        enable(nodes: any, enable?: bool): void;
         expand(nodes: any): void;
         findByText(text: string): JQuery;
         findByUid(text: string): JQuery;
-        insertAfter(nodeData: any, referenceNode: Element): void;
-        insertBefore(nodeData: any, referenceNode: Element): void;
-        parent(node: Element): void;
-        remove(node: string): void;
+        insertAfter(nodeData: any, referenceNode: JQuery): void;
+        insertBefore(nodeData: any, referenceNode: JQuery): void;
+        parent(node: any): JQuery;
+        remove(node: any): void;
         select(): JQuery;
         select(node?: any): void;
         setDataSource(dataSource: kendo.data.HierarchicalDataSource): void;
         text(): string;
         text(node: string, newText: string): void;
         toggle(node: string): void;
+        updateIndeterminate(node: JQuery): void;
     }
 
     interface TreeViewAnimationCollapse {
@@ -2338,7 +3084,9 @@ module kendo.ui {
     }
 
     interface TreeViewOptions {
+        name?: string;
         animation?: TreeViewAnimation;
+        autoBind?: bool;
         checkboxes?: TreeViewCheckboxes;
         dataImageUrlField?: string;
         dataSource?: any;
@@ -2362,6 +3110,8 @@ module kendo.ui {
 
     interface TreeViewEvent {
         sender: TreeView;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface TreeViewCollapseEvent extends TreeViewEvent {
@@ -2414,13 +3164,16 @@ module kendo.ui {
 
 
     class Upload extends kendo.ui.Widget {
+        static fn: Upload;
+        static extend(proto: Object): Upload;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: UploadOptions);
         options: UploadOptions;
         destroy(): void;
         disable(): void;
-        enable(enable: bool): void;
+        enable(enable?: bool): void;
         toggle(enable: bool): void;
     }
 
@@ -2447,11 +3200,14 @@ module kendo.ui {
     }
 
     interface UploadOptions {
+        name?: string;
         async?: UploadAsync;
         enabled?: bool;
+        files?: any;
         localization?: UploadLocalization;
         multiple?: bool;
         showFileList?: bool;
+        template?: any;
         cancel?(e: UploadCancelEvent): void;
         complete?(e: UploadEvent): void;
         error?(e: UploadErrorEvent): void;
@@ -2464,6 +3220,8 @@ module kendo.ui {
 
     interface UploadEvent {
         sender: Upload;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface UploadCancelEvent extends UploadEvent {
@@ -2501,10 +3259,14 @@ module kendo.ui {
     interface UploadUploadEvent extends UploadEvent {
         files?: any;
         data?: any;
+        XMLHttpRequest?: any;
     }
 
 
     class Validator extends kendo.ui.Widget {
+        static fn: Validator;
+        static extend(proto: Object): Validator;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: ValidatorOptions);
@@ -2512,10 +3274,11 @@ module kendo.ui {
         errors(): any;
         hideMessages(): void;
         validate(): bool;
-        validateInput(input: Element): bool;
+        validateInput(input: any): bool;
     }
 
     interface ValidatorOptions {
+        name?: string;
         messages?: any;
         rules?: any;
         validateOnBlur?: bool;
@@ -2523,10 +3286,15 @@ module kendo.ui {
 
     interface ValidatorEvent {
         sender: Validator;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
 
     class Window extends kendo.ui.Widget {
+        static fn: Window;
+        static extend(proto: Object): Window;
+
         element: JQuery;
         wrapper: JQuery;
         constructor(element: Element, options?: WindowOptions);
@@ -2539,6 +3307,7 @@ module kendo.ui {
         maximize(): kendo.ui.Window;
         minimize(): kendo.ui.Window;
         open(): kendo.ui.Window;
+        pin(): void;
         refresh(options: WindowRefreshOptions): kendo.ui.Window;
         restore(): kendo.ui.Window;
         setOptions(): void;
@@ -2546,16 +3315,19 @@ module kendo.ui {
         title(text: string): void;
         toFront(): kendo.ui.Window;
         toggleMaximization(): kendo.ui.Window;
+        unpin(): void;
     }
 
     interface WindowAnimationClose {
         effects?: string;
         duration?: number;
+        reverse?: bool;
     }
 
     interface WindowAnimationOpen {
         effects?: string;
         duration?: number;
+        reverse?: bool;
     }
 
     interface WindowAnimation {
@@ -2567,6 +3339,11 @@ module kendo.ui {
         template?: string;
     }
 
+    interface WindowPosition {
+        top?: number;
+        left?: number;
+    }
+
     interface WindowRefreshOptions {
         url?: string;
         data?: any;
@@ -2576,6 +3353,7 @@ module kendo.ui {
     }
 
     interface WindowOptions {
+        name?: string;
         actions?: any;
         animation?: WindowAnimation;
         appendTo?: any;
@@ -2587,11 +3365,13 @@ module kendo.ui {
         minHeight?: number;
         minWidth?: number;
         modal?: bool;
+        pinned?: bool;
+        position?: WindowPosition;
         resizable?: bool;
         title?: any;
         visible?: bool;
-        width?: number;
-        height?: number;
+        width?: any;
+        height?: any;
         activate?(e: WindowEvent): void;
         close?(e: WindowEvent): void;
         deactivate?(e: WindowEvent): void;
@@ -2605,6 +3385,8 @@ module kendo.ui {
 
     interface WindowEvent {
         sender: Window;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
     interface WindowErrorEvent extends WindowEvent {
@@ -2614,21 +3396,7 @@ module kendo.ui {
 
 
 }
-module kendo.data {
-    class Binder extends Observable {
-        options: BinderOptions;
-    }
-
-    interface BinderOptions {
-    }
-
-    interface BinderEvent {
-        sender: Binder;
-    }
-
-
-}
-module FX {
+declare module FX {
     class FX  {
         options: FXOptions;
         kendoAnimate(duration: number, reverse: bool, complete: Function, show: bool, hide: bool): void;
@@ -2657,10 +3425,13 @@ module FX {
     }
 
     interface FXOptions {
+        name?: string;
     }
 
     interface FXEvent {
         sender: FX;
+        isDefaultPrevented(): bool;
+        preventDefault: Function;
     }
 
 
@@ -2670,6 +3441,9 @@ interface JQueryXHR {
 }
 
 interface JQueryEventObject {
+}
+
+interface JQueryPromise {
 }
 
 interface JQuery {
@@ -2736,6 +3510,9 @@ interface JQuery {
 
     kendoRangeSlider(): JQuery;
     kendoRangeSlider(options: kendo.ui.RangeSliderOptions): JQuery;
+
+    kendoScheduler(): JQuery;
+    kendoScheduler(options: kendo.ui.SchedulerOptions): JQuery;
 
     kendoSlider(): JQuery;
     kendoSlider(options: kendo.ui.SliderOptions): JQuery;

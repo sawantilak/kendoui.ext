@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "mobile.scroller",
     name: "Scroller",
@@ -19,7 +17,7 @@ kendo_module({
 (function($, undefined) {
     var kendo = window.kendo,
         mobile = kendo.mobile,
-        fx = kendo.fx,
+        fx = kendo.effects,
         ui = mobile.ui,
         proxy = $.proxy,
         extend = $.extend,
@@ -33,7 +31,9 @@ kendo_module({
         abs = Math.abs,
         SNAPBACK_DURATION = 500,
         SCROLLBAR_OPACITY = 0.7,
-        FRICTION = 0.93,
+        FRICTION = 0.96,
+        VELOCITY_MULTIPLIER = 10,
+        MAX_VELOCITY = 55,
         OUT_OF_BOUNDS_FRICTION = 0.5,
         RELEASECLASS = "km-scroller-release",
         REFRESHCLASS = "km-scroller-refresh",
@@ -120,7 +120,7 @@ kendo_module({
             if (that._outOfBounds()) {
                 that._snapBack();
             } else {
-                that.velocity = e.touch[that.axis].velocity * 16;
+                that.velocity = Math.max(Math.min(e.touch[that.axis].velocity * VELOCITY_MULTIPLIER, MAX_VELOCITY), -MAX_VELOCITY);
                 if (that.velocity) {
                     that.tapCapture.captureNext();
                     Animation.fn.start.call(that);
@@ -223,7 +223,8 @@ kendo_module({
 
             element = that.element;
 
-            if (that.options.useNative && kendo.support.hasNativeScrolling) {
+            that._native = that.options.useNative && kendo.support.hasNativeScrolling;
+            if (that._native) {
                 element.addClass("km-native-scroller")
                     .prepend('<div class="km-scroll-header"/>');
 
@@ -256,18 +257,22 @@ kendo_module({
                     }
                 }),
 
+                avoidScrolling = this.options.avoidScrolling,
+
                 userEvents = new kendo.UserEvents(element, {
                     allowSelection: true,
                     preventDragEvent: true,
+                    captureUpIfMoved: true,
                     multiTouch: that.options.zoom,
                     start: function(e) {
                         dimensions.refresh();
 
                         var velocityX = abs(e.x.velocity),
-                            velocityY = abs(e.y.velocity);
+                            velocityY = abs(e.y.velocity),
+                            horizontalSwipe  = velocityX * 2 >= velocityY,
+                            verticalSwipe = velocityY * 2 >= velocityX;
 
-                        if (dimensions.x.enabled && velocityX * 2 >= velocityY ||
-                            dimensions.y.enabled && velocityY * 2 >= velocityX) {
+                        if (!avoidScrolling(e) && that.enabled && (dimensions.x.enabled && horizontalSwipe || dimensions.y.enabled && verticalSwipe)) {
                             userEvents.capture();
                         } else {
                             userEvents.cancel();
@@ -307,7 +312,10 @@ kendo_module({
                 pane: pane,
                 tapCapture: tapCapture,
                 pulled: false,
+                enabled: true,
                 scrollElement: inner,
+                scrollTop: 0,
+                scrollLeft: 0,
                 fixedContainer: element.children().first()
             });
 
@@ -321,6 +329,18 @@ kendo_module({
             }
 
             kendo.onResize($.proxy(that.reset, that));
+        },
+
+        makeVirtual: function() {
+            this.dimensions.y.makeVirtual();
+        },
+
+        virtualSize: function(min, max) {
+            this.dimensions.y.virtualSize(min, max);
+        },
+
+        height: function() {
+            return this.dimensions.y.size;
         },
 
         scrollHeight: function() {
@@ -337,6 +357,7 @@ kendo_module({
             pullOffset: 140,
             elastic: true,
             useNative: false,
+            avoidScrolling: function() { return false; },
             pullTemplate: "Pull to refresh",
             releaseTemplate: "Release to refresh",
             refreshTemplate: "Refreshing"
@@ -357,10 +378,31 @@ kendo_module({
         },
 
         reset: function() {
-            this.movable.moveTo({x: 0, y: 0});
+            if (this._native) {
+                this.scrollElement.scrollTop(0);
+            } else {
+                this.movable.moveTo({x: 0, y: 0});
+                this._scale(1);
+            }
+        },
+
+        zoomOut: function() {
+            var dimensions = this.dimensions;
+            dimensions.refresh();
+            this._scale(dimensions.fitScale);
+            this.movable.moveTo(dimensions.centerCoordinates());
+        },
+
+        enable: function() {
+            this.enabled = true;
+        },
+
+        disable: function() {
+            this.enabled = false;
         },
 
         scrollTo: function(x, y) {
+            this.dimensions.refresh();
             this.movable.moveTo({x: x, y: y});
         },
 
@@ -377,6 +419,11 @@ kendo_module({
             this.userEvents.destroy();
         },
 
+        _scale: function(scale) {
+            this.dimensions.rescale(scale);
+            this.movable.scaleTo(scale);
+        },
+
         _initPullToRefresh: function() {
             var that = this;
 
@@ -385,7 +432,7 @@ kendo_module({
             that.releaseTemplate = kendo.template(that.options.releaseTemplate);
             that.refreshTemplate = kendo.template(that.options.refreshTemplate);
 
-            that.scrollElement.prepend('<span class="km-scroller-pull"><span class="km-icon"></span><span class="km-template">' + that.pullTemplate({}) + '</span></span>');
+            that.scrollElement.prepend('<span class="km-scroller-pull"><span class="km-icon"></span><span class="km-loading-left"></span><span class="km-loading-right"></span><span class="km-template">' + that.pullTemplate({}) + '</span></span>');
             that.refreshHint = that.scrollElement.children().first();
             that.hintContainer = that.refreshHint.children(".km-template");
 
@@ -425,31 +472,35 @@ kendo_module({
 
         _initAxis: function(axis) {
             var that = this,
-            movable = that.movable,
-            dimension = that.dimensions[axis],
-            tapCapture = that.tapCapture,
+                movable = that.movable,
+                dimension = that.dimensions[axis],
+                tapCapture = that.tapCapture,
+                scrollBar = new ScrollBar({
+                    axis: axis,
+                    movable: movable,
+                    dimension: dimension,
+                    container: that.element
+                });
 
-            scrollBar = new ScrollBar({
-                axis: axis,
-                movable: movable,
-                dimension: dimension,
-                container: that.element
-            }),
+            that.pane[axis].bind(CHANGE, function() {
+                scrollBar.show();
+            });
 
-            inertia = new DragInertia({
+            that[axis + "inertia"] = new DragInertia({
                 axis: axis,
                 movable: movable,
                 tapCapture: tapCapture,
                 userEvents: that.userEvents,
                 dimension: dimension,
                 elastic: that.options.elastic,
-                end: function() { scrollBar.hide(); }
-            });
-
-            that[axis + "inertia"] = inertia;
-
-            that.pane[axis].bind(CHANGE, function() {
-                scrollBar.show();
+                end: function() {
+                    scrollBar.hide();
+                    that.trigger("scrollEnd", {
+                        axis: axis,
+                        scrollTop: that.scrollTop,
+                        scrollLeft: that.scrollLeft
+                    });
+                }
             });
         }
     });

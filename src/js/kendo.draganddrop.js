@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "draganddrop",
     name: "Drag & drop",
@@ -166,16 +164,32 @@ kendo_module({
             $.extend(that, options);
 
             that.scale = 1;
-            that.max = 0;
 
             if (that.horizontal) {
-                that.measure = "width";
+                that.measure = "offsetWidth";
                 that.scrollSize = "scrollWidth";
                 that.axis = "x";
             } else {
-                that.measure = "height";
+                that.measure = "offsetHeight";
                 that.scrollSize = "scrollHeight";
                 that.axis = "y";
+            }
+        },
+
+        makeVirtual: function() {
+            $.extend(this, {
+                virtual: true,
+                forcedEnabled: true,
+                _virtualMin: 1000,
+                _virtualMax: -1000
+            });
+        },
+
+        virtualSize: function(min, max) {
+            if (this._virtualMin !== min || this._virtualMax !== max) {
+                this._virtualMin = min;
+                this._virtualMax = max;
+                this.update();
             }
         },
 
@@ -188,7 +202,7 @@ kendo_module({
         },
 
         getSize: function() {
-            return this.container[this.measure]();
+            return this.container[0][this.measure];
         },
 
         getTotal: function() {
@@ -201,14 +215,16 @@ kendo_module({
 
         update: function(silent) {
             var that = this,
-                total = that.getTotal(),
+                total = that.virtual ? that._virtualMax : that.getTotal(),
                 scaledTotal = total * that.scale,
                 size = that.getSize();
 
+            that.max = that.virtual ? -that._virtualMin : 0;
             that.size = size;
             that.total = scaledTotal;
-            that.min = Math.min(that.max, that.size - scaledTotal);
-            that.minScale = that.size / total;
+            that.min = Math.min(that.max, size - scaledTotal);
+            that.minScale = size / total;
+            that.centerOffset = (scaledTotal - size) / 2;
 
             that.enabled = that.forcedEnabled || (scaledTotal > size);
 
@@ -240,12 +256,17 @@ kendo_module({
             this.refresh();
         },
 
+        centerCoordinates: function() {
+            return { x: Math.min(0, -this.x.centerOffset), y: Math.min(0, -this.y.centerOffset) };
+        },
+
         refresh: function() {
             var that = this;
             that.x.update();
             that.y.update();
             that.enabled = that.x.enabled || that.y.enabled;
-            that.minScale = that.forcedMinScale || Math.max(that.x.minScale, that.y.minScale);
+            that.minScale = that.forcedMinScale || Math.min(that.x.minScale, that.y.minScale);
+            that.fitScale = Math.max(that.x.minScale, that.y.minScale);
             that.trigger(CHANGE);
         }
     });
@@ -338,9 +359,14 @@ kendo_module({
 
                     that.dimensions.rescale(movable.scale);
                     that.gesture = e;
+                    e.preventDefault();
                 },
 
                 move: function(e) {
+                    if (e.event.target.tagName.match(/textarea|input/i)) {
+                        return;
+                    }
+
                     if (x.dimension.enabled || y.dimension.enabled) {
                         x.dragMove(e.x.delta);
                         y.dragMove(e.y.delta);
@@ -358,16 +384,16 @@ kendo_module({
     });
 
     var TRANSFORM_STYLE = support.transitions.prefix + "Transform",
-        round = Math.round,
         translate;
+
 
     if (support.hasHW3D) {
         translate = function(x, y, scale) {
-            return "translate3d(" + round(x) + "px," + round(y) +"px,0) scale(" + scale + ")";
+            return "translate3d(" + x + "px," + y +"px,0) scale(" + scale + ")";
         };
     } else {
         translate = function(x, y, scale) {
-            return "translate(" + round(x) + "px," + round(y) +"px) scale(" + scale + ")";
+            return "translate(" + x + "px," + y +"px) scale(" + scale + ")";
         };
     }
 

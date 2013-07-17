@@ -448,13 +448,13 @@
         }
     };
 
-    var kendoSkin = "default";
+    var kendoSkin = "silver";
 
     window.kendoMobileOS = "ios";
 
     $(Application.init);
 
-    var mobileClasses = "km-ios km-android km-blackberry km-ios4 km-wp";
+    var mobileClasses = "km-ios km-android km-blackberry km-ios4 km-wp km-flat";
 
     function applyCurrentTheme() {
         if (supports.sessionStorage) {
@@ -474,7 +474,7 @@
         }
 
         $(container).removeClass(mobileClasses).addClass("km-" + kendoMobileOS);
-        $("#device-wrapper").removeClass("ios android blackberry wp").addClass(kendoMobileOS);
+        $("#device-wrapper").removeClass("ios android blackberry wp flat").addClass(kendoMobileOS);
         $("#deviceList .selectedThumb").removeClass("selectedThumb");
         $("#deviceList ." + kendoMobileOS + "Thumb").parent().addClass("selectedThumb");
     }
@@ -508,7 +508,8 @@
                 { text: "iOS", value: "ios" },
                 { text: "Android", value: "android" },
                 { text: "Blackberry", value: "blackberry" },
-                { text: "Windows Phone", value: "wp" }
+                { text: "WP8", value: "wp" },
+                { text: "Flat Skin", value: "flat" }
             ]
         });
 
@@ -665,7 +666,7 @@
             options: {
                 name: "ThemeChooser",
                 label: "Choose theme:",
-                theme: "default",
+                theme: "silver",
                 listContainer: "#mainWrapInner",
                 itemTemplate: kendo.template(
                     "<li class='tc-theme'>" +
@@ -687,7 +688,8 @@
                     { text: "Black", value: "black", colors: ["#0167cc", "#4698e9", "#272727", "#000000"] },
                     { text: "Metro Black", value: "metroblack", colors: ["#00aba9", "#0e0e0e", "#333333", "#565656"] },
                     { text: "High Contrast", value: "highcontrast", colors: ["#b11e9c", "#880275", "#664e62", "#1b141a"] },
-                    { text: "Moonlight", value: "moonlight", colors: ["#ee9f05", "#40444f", "#2f3640", "#212a33"] }
+                    { text: "Moonlight", value: "moonlight", colors: ["#ee9f05", "#40444f", "#2f3640", "#212a33"] },
+                    { text: "Flat", value: "flat", colors: ["#363940", "#2eb3a6", "#10c4b2", "#ffffff"] }
                 ]
             }
         });

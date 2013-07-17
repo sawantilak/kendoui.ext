@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "selectable",
     name: "Selectable",
@@ -50,7 +48,7 @@ kendo_module({
 
             Widget.fn.init.call(that, element, options);
 
-            that._marquee = $("<div class='k-marquee'></div>");
+            that._marquee = $("<div class='k-marquee'><div class='k-marquee-color'></div></div>");
             that._lastActive = null;
             that.element.addClass(SELECTABLE);
 
@@ -82,7 +80,7 @@ kendo_module({
         _tap: function(e) {
             var target = $(e.target),
                 that = this,
-                ctrlKey = e.event.ctrlKey,
+                ctrlKey = e.event.ctrlKey || e.event.metaKey,
                 multiple = that.options.multiple,
                 shiftKey = multiple && e.event.shiftKey,
                 selected,
@@ -117,7 +115,7 @@ kendo_module({
             var that = this,
                 target = $(e.target),
                 selected = target.hasClass(SELECTED),
-                ctrlKey = e.event.ctrlKey;
+                ctrlKey = e.event.ctrlKey || e.event.metaKey;
 
             that._downTarget = target;
 
@@ -161,7 +159,7 @@ kendo_module({
 
             that._marquee.css(position);
 
-            invalidateSelectables(items, that._downTarget[0], position, e.event.ctrlKey);
+            invalidateSelectables(items, that._downTarget[0], position, (e.event.ctrlKey || e.event.metaKey));
 
             e.preventDefault();
         },

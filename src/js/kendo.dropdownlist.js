@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "dropdownlist",
     name: "DropDownList",
@@ -25,7 +23,6 @@ kendo_module({
         DISABLED = "disabled",
         READONLY = "readonly",
         CHANGE = "change",
-        SELECT = "select",
         FOCUSED = "k-state-focused",
         DEFAULT = "k-state-default",
         STATEDISABLED = "k-state-disabled",
@@ -71,8 +68,6 @@ kendo_module({
 
             that._mobile();
 
-            that._accessors();
-
             that._dataSource();
             that._ignoreCase();
 
@@ -93,7 +88,7 @@ kendo_module({
                     optionLabel = that._optionLabelText(options.optionLabel),
                     useOptionLabel = optionLabel && options.index === 0;
 
-                    if (element.is(SELECT)) {
+                    if (that._isSelect) {
                         if (useOptionLabel) {
                             text = optionLabel;
                         } else {
@@ -192,7 +187,7 @@ kendo_module({
                 that.popup._position();
             }
 
-            if (that.element.is(SELECT)) {
+            if (that._isSelect) {
                 if (optionLabel && length) {
                     optionLabel = that._optionLabelText(optionLabel);
                     optionLabel = '<option value="">' + optionLabel + "</option>";
@@ -282,7 +277,21 @@ kendo_module({
                 disable = options.disable,
                 readonly = options.readonly,
                 wrapper = that.wrapper.off(ns),
-                dropDownWrapper = that._inputWrapper.off(HOVEREVENTS);
+                dropDownWrapper = that._inputWrapper.off(HOVEREVENTS),
+                focusin = function() {
+                    dropDownWrapper.addClass(FOCUSED);
+                    that._blured = false;
+                },
+                focusout = function() {
+                    if (!that._blured) {
+                        that._triggerCascade();
+                        that._blur();
+                        dropDownWrapper.removeClass(FOCUSED);
+
+                        that._blured = true;
+                        element.blur();
+                    }
+                };
 
             if (!readonly && !disable) {
                 element.removeAttr(DISABLED).removeAttr(READONLY);
@@ -303,20 +312,8 @@ kendo_module({
                     })
                     .on("keydown" + ns, proxy(that._keydown, that))
                     .on("keypress" + ns, proxy(that._keypress, that))
-                    .on("focusin" + ns, function() {
-                        dropDownWrapper.addClass(FOCUSED);
-                        that._blured = false;
-                    })
-                    .on("focusout" + ns, function() {
-                        if (!that._blured) {
-                            that._triggerCascade();
-                            that._blur();
-                            dropDownWrapper.removeClass(FOCUSED);
-
-                            that._blured = true;
-                            element.blur();
-                        }
-                    });
+                    .on("focusin" + ns, focusin)
+                    .on("focusout" + ns, focusout);
 
             } else {
                 if (disable) {
@@ -328,6 +325,10 @@ kendo_module({
                     dropDownWrapper
                         .addClass(DEFAULT)
                         .removeClass(STATEDISABLED);
+
+                    wrapper
+                        .on("focusin" + ns, focusin)
+                        .on("focusout" + ns, focusout);
                 }
 
                 element.attr(DISABLED, disable)

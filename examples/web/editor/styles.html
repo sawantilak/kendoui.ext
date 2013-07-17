@@ -10,12 +10,19 @@
     <script src="../../../js/jquery.min.js"></script>
     <script src="../../../js/kendo.web.min.js"></script>
     <script src="../../content/shared/js/console.js"></script>
+    <script>
+        
+    </script>
+    
+    
 </head>
 <body>
-    <a class="offline-button" href="../index.html">Back</a>
+    
+        <a class="offline-button" href="../index.html">Back</a>
+    
     <div id="example" class="k-content">
 
-    <div class="configuration k-widget k-header" style="float:none;max-width:none;margin:0 0 2em;">
+    <div class="configuration" style="float:none;max-width:none;margin:0 0 2em;">
         <span class="infoHead">Information</span>
         <p>
             The following demo shows how to use the Editor's style tool, which provides the ability to customize the widget content by means of custom
@@ -49,12 +56,11 @@
     <script>
         $("#editor").kendoEditor({
             tools: [
-                "style"
-            ],
-            style: [
-                { text: "Highlight Error", value: "hlError" },
-                { text: "Highlight OK", value: "hlOK" },
-                { text: "Inline Code", value: "inlineCode" }
+                { name: "formatting", items: [
+                    { text: "Highlight Error", value: ".hlError" },
+                    { text: "Highlight OK", value: ".hlOK" },
+                    { text: "Inline Code", value: ".inlineCode" }
+                ] }
             ],
             stylesheets: [
                 "../../content/web/editor/editorStyles.css"
