@@ -10,9 +10,16 @@
     <script src="../../../js/jquery.min.js"></script>
     <script src="../../../js/kendo.web.min.js"></script>
     <script src="../../content/shared/js/console.js"></script>
+    <script>
+        
+    </script>
+    
+    
 </head>
 <body>
-    <a class="offline-button" href="../index.html">Back</a>
+    
+        <a class="offline-button" href="../index.html">Back</a>
+    
     <div id="example">
 
     <div class="demo-section">
@@ -29,25 +36,6 @@
             <div id="head" class="picker"></div>
         </div>
     </div>
-
-    <script>
-
-        function select(e) {
-            $("#bike-" + this.element.attr("id")).css("background-color", e.value);
-        }
-
-        $("#tail").kendoFlatColorPicker({
-            preview: false,
-            value: "#000",
-            change: select
-        });
-
-        $("#head").kendoFlatColorPicker({
-            preview: false,
-            value: "#e15613",
-            change: select
-        });
-    </script>
 
     <style scoped>
         .demo-section {
@@ -106,6 +94,24 @@
             zoom: 1;
         }
     </style>
+
+    <script>
+        function select(e) {
+            $("#bike-" + this.element.attr("id")).css("background-color", e.value);
+        }
+
+        $("#tail").kendoFlatColorPicker({
+            preview: false,
+            value: "#000",
+            change: select
+        });
+
+        $("#head").kendoFlatColorPicker({
+            preview: false,
+            value: "#e15613",
+            change: select
+        });
+    </script>
 
 </div>
 

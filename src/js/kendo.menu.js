@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "menu",
     name: "Menu",
@@ -45,6 +43,7 @@ kendo_module({
         ZINDEX = "zIndex",
         ACTIVATE = "activate",
         DEACTIVATE = "deactivate",
+        POINTERDOWN = "touchstart" + NS + " MSPointerDown" + NS,
         MOUSEENTER = kendo.support.pointers ? "MSPointerOver" : "mouseenter",
         MOUSELEAVE = kendo.support.pointers ? "MSPointerOut" : "mouseleave",
         KENDOPOPUP = "kendoPopup",
@@ -277,13 +276,15 @@ kendo_module({
 
             that._focusProxy = proxy(that._focusHandler, that);
 
-            element.on("touchstart MSPointerDown", that._focusProxy)
+            element.on(POINTERDOWN, that._focusProxy)
                    .on(CLICK + NS, disabledSelector, false)
                    .on(CLICK + NS, itemSelector, proxy(that._click , that))
                    .on("keydown" + NS, proxy(that._keydown, that))
                    .on("focus" + NS, proxy(that._focus, that))
                    .on("focus" + NS, ".k-content", proxy(that._focus, that))
+                   .on(POINTERDOWN + " " + MOUSEDOWN + NS, ".k-content", proxy(that._preventClose, that))
                    .on("blur" + NS, proxy(that._removeHoverItem, that))
+                   .on("blur" + NS, "[tabindex]", proxy(that._checkActiveElement, that))
                    .on(MOUSEENTER + NS, itemSelector, proxy(that._mouseenter, that))
                    .on(MOUSELEAVE + NS, itemSelector, proxy(that._mouseleave, that))
                    .on(MOUSEENTER + NS + " " + MOUSELEAVE + NS + " " +
@@ -563,6 +564,11 @@ kendo_module({
                                     if (!that.trigger(CLOSE, { item: li[0] })) {
                                         li.css(ZINDEX, li.data(ZINDEX));
                                         li.removeData(ZINDEX);
+
+                                        if (mobile) {
+                                            li.removeClass(HOVERSTATE);
+                                            that._removeHoverItem();
+                                        }
                                     } else {
                                         e.preventDefault();
                                     }
@@ -600,7 +606,7 @@ kendo_module({
                 clearTimeout(li.data(TIMER));
 
                 li.data(TIMER, setTimeout(function () {
-                    var popup = li.find(".k-group:first:visible").data(KENDOPOPUP);
+                    var popup = li.find(".k-group:not(.k-list-container):first:visible").data(KENDOPOPUP);
 
                     if (popup) {
                         popup.close();
@@ -630,6 +636,28 @@ kendo_module({
             }
 
             this._removeHoverItem();
+        },
+
+        _preventClose: function() {
+            if (!this.options.closeOnClick) {
+                this._closurePrevented = true;
+            }
+        },
+
+        _checkActiveElement: function(e) {
+            var that = this,
+                hoverItem = $(this._hoverItem()[0] || (e ? e.currentTarget : {})),
+                target = that._findRootParent(hoverItem)[0];
+
+            if (!this._closurePrevented) {
+                setTimeout(function() {
+                    if (!document.hasFocus() || (!contains(target, kendo._activeElement()) && e && !contains(target, e.currentTarget))) {
+                        that.close(target);
+                    }
+                }, 0);
+            }
+
+            this._closurePrevented = false;
         },
 
         _removeHoverItem: function() {
@@ -709,7 +737,7 @@ kendo_module({
                 link = target.closest("." + LINK),
                 element = target.closest(allItemsSelector),
                 href = link.attr("href"), childGroup, childGroupVisible,
-                isLink = (!!href && href.charAt(href.length - 1) != "#");
+                isLink = (!!href && href !== $("<a href='#' />").attr("href"));
 
             if (element.children(templateSelector)[0]) {
                 return;
@@ -740,7 +768,7 @@ kendo_module({
                 return;
             }
 
-            if ((!element.parent().hasClass(MENU) || !options.openOnClick) && mobile) {
+            if ((!element.parent().hasClass(MENU) || !options.openOnClick) && !kendo.support.touch) {
                 return;
             }
 
@@ -824,9 +852,8 @@ kendo_module({
                 }
             } else if (key == keys.TAB) {
                 target = that._findRootParent(hoverItem);
-                that.close(target);
                 that._moveHover(hoverItem, target);
-
+                that._checkActiveElement();
                 return;
             }
 
@@ -899,6 +926,10 @@ kendo_module({
             var that = this,
                 nextItem,
                 parentItem;
+
+            if (item.hasClass(DISABLEDSTATE)) {
+                return;
+            }
 
             if (!belongsToVertical) {
                 nextItem = item.nextAll(nextSelector);

@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "editable",
     name: "Editable",
@@ -21,10 +19,11 @@ kendo_module({
         ui = kendo.ui,
         Widget = ui.Widget,
         extend = $.extend,
+        oldIE = kendo.support.browser.msie && kendo.support.browser.version < 9,
         isFunction = $.isFunction,
         isPlainObject = $.isPlainObject,
         inArray = $.inArray,
-        nameSpecialCharRegExp = /("|'|\[|\]|\$|\.|\:|\+)/g,
+        nameSpecialCharRegExp = /("|\%|'|\[|\]|\$|\.|\,|\:|\;|\+|\*|\&|\!|\#|\(|\)|<|>|\=|\?|\@|\^|\{|\}|\~|\/|\||`)/g,
         ERRORTEMPLATE = '<div class="k-widget k-tooltip k-tooltip-validation" style="margin:0.5em"><span class="k-icon k-warning"> </span>' +
                     '#=message#<div class="k-callout k-callout-n"></div></div>',
         CHANGE = "change";
@@ -144,11 +143,18 @@ kendo_module({
 
     function addValidationRules(modelField, rules) {
         var validation = modelField ? (modelField.validation || {}) : {},
-            rule;
+            rule,
+            descriptor;
 
         for (rule in validation) {
-            if (isFunction(validation[rule])) {
-                rules[rule] = validation[rule];
+            descriptor = validation[rule];
+
+            if (isPlainObject(descriptor) && descriptor.value) {
+                descriptor = descriptor.value;
+            }
+
+            if (isFunction(descriptor)) {
+                rules[rule] = descriptor;
             }
         }
     }
@@ -282,7 +288,10 @@ kendo_module({
                 errorTemplate: that.options.errorTemplate || undefined,
                 rules: rules }).data("kendoValidator");
 
-            container.find(":focusable:first").focus();
+            var focusable = container.find(":focusable:first").focus();
+            if (oldIE) {
+                focusable.focus();
+            }
         }
    });
 

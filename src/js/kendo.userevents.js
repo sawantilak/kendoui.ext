@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "userevents",
     name: "User Events",
@@ -19,15 +17,14 @@ kendo_module({
 (function ($, undefined) {
     var kendo = window.kendo,
         support = kendo.support,
-        pointers = support.pointers,
         document = window.document,
-        SURFACE = $(document.documentElement),
         Class = kendo.Class,
         Observable = kendo.Observable,
         now = $.now,
         extend = $.extend,
         OS = support.mobileOS,
         invalidZeroEvents = OS && OS.android,
+        DEFAULT_THRESHOLD = support.browser.ie ? 5 : 0, // WP8 and W8 are very sensitive and always report move.
 
         // UserEvents events
         PRESS = "press",
@@ -37,6 +34,7 @@ kendo_module({
         END = "end",
         CANCEL = "cancel",
         TAP = "tap",
+        RELEASE = "release",
         GESTURESTART = "gesturestart",
         GESTURECHANGE = "gesturechange",
         GESTUREEND = "gestureend",
@@ -212,6 +210,8 @@ kendo_module({
                 that._trigger(TAP, touchInfo);
             }
 
+            that._trigger(RELEASE, touchInfo);
+
             that.dispose();
         },
 
@@ -277,7 +277,18 @@ kendo_module({
             parent = target.parent();
         }
 
-        parent.trigger($.Event(e.type, { target: target[0] }));
+        var fakeEventData = $.extend(true, {}, e, { target: target[0] });
+        parent.trigger($.Event(e.type, fakeEventData));
+    }
+
+    function withEachUpEvent(callback) {
+        var downEvents = kendo.eventMap.up.split(" "),
+            idx = 0,
+            length = downEvents.length;
+
+        for(; idx < length; idx ++) {
+            callback(downEvents[idx]);
+        }
     }
 
     var UserEvents = Observable.extend({
@@ -288,10 +299,11 @@ kendo_module({
 
             options = options || {};
             filter = that.filter = options.filter;
-            that.threshold = options.threshold || 0;
+            that.threshold = options.threshold || DEFAULT_THRESHOLD;
             that.touches = [];
             that._maxTouches = options.multiTouch ? 2 : 1;
             that.allowSelection = options.allowSelection;
+            that.captureUpIfMoved = options.captureUpIfMoved;
             that.eventNS = ns;
 
             element = $(element).handler(that);
@@ -299,7 +311,7 @@ kendo_module({
 
             extend(that, {
                 element: element,
-                surface: options.global ? SURFACE : options.surface || element,
+                surface: options.global ? $(document.documentElement) : $(options.surface || element),
                 stopPropagation: options.stopPropagation,
                 pressed: false
             });
@@ -310,7 +322,7 @@ kendo_module({
 
             element.on(kendo.applyEventMap("down", ns), filter, "_start");
 
-            if (pointers) {
+            if (support.pointers) {
                 element.css("-ms-touch-action", "pinch-zoom double-tap-zoom");
             }
 
@@ -320,20 +332,13 @@ kendo_module({
 
             element.on(kendo.applyEventMap("mousedown selectstart", ns), filter, { root: element }, "_select");
 
-            if (support.eventCapture) {
-                var downEvents = kendo.eventMap.up.split(" "),
-                    idx = 0,
-                    length = downEvents.length,
-                    surfaceElement = that.surface[0],
-                    preventIfMoving = function(e) {
-                        if (that._isMoved()) {
-                            e.preventDefault();
-                        }
-                    };
+            if (that.captureUpIfMoved && support.eventCapture) {
+                var surfaceElement = that.surface[0],
+                    preventIfMovingProxy = $.proxy(that.preventIfMoving, that);
 
-                for(; idx < length; idx ++) {
-                    surfaceElement.addEventListener(downEvents[idx], preventIfMoving, true);
-                }
+                withEachUpEvent(function(eventName) {
+                    surfaceElement.addEventListener(eventName, preventIfMovingProxy, true);
+                });
             }
 
             that.bind([
@@ -342,6 +347,7 @@ kendo_module({
             START,
             MOVE,
             END,
+            RELEASE,
             CANCEL,
             GESTURESTART,
             GESTURECHANGE,
@@ -351,12 +357,37 @@ kendo_module({
             ], options);
         },
 
+        preventIfMoving: function(e) {
+            if (this._isMoved()) {
+                e.preventDefault();
+            }
+        },
+
         destroy: function() {
             var that = this;
+
+            if (that._destroyed) {
+                return;
+            }
+
+            that._destroyed = true;
+
+            if (that.captureUpIfMoved && support.eventCapture) {
+                var surfaceElement = that.surface[0];
+                withEachUpEvent(function(eventName) {
+                    surfaceElement.removeEventListener(eventName, that.preventIfMoving);
+                });
+            }
+
             that.element.kendoDestroy(that.eventNS);
             that.surface.kendoDestroy(that.eventNS);
+            that.element.removeData("handler");
+            that.surface.removeData("handler");
             that._disposeAll();
+
             that.unbind();
+            delete that.surface;
+            delete that.element;
         },
 
         capture: function() {

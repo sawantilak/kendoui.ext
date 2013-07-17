@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "datetimepicker",
     name: "DateTimePicker",
@@ -637,7 +635,8 @@ kendo_module({
         _reset: function() {
             var that = this,
                 element = that.element,
-                form = element.closest("form");
+                formId = element.attr("form"),
+                form = formId ? $("#" + formId) : element.closest("form");
 
             if (form[0]) {
                 that._resetHandler = function() {

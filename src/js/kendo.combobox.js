@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "combobox",
     name: "ComboBox",
@@ -73,8 +71,6 @@ kendo_module({
 
             that._popup();
 
-            that._accessors();
-
             that._dataSource();
             that._ignoreCase();
 
@@ -97,6 +93,7 @@ kendo_module({
 
                 if (text) {
                     that.input.val(text);
+                    that._prev = text;
                 }
             }
 
@@ -421,6 +418,7 @@ kendo_module({
                     input.value = text;
                 }
 
+                that._prev = input.value;
                 that._triggerCascade();
             } else {
                 return input.value;
@@ -460,7 +458,7 @@ kendo_module({
                     that._placeholder();
                 }
 
-                that._prev = that._old = that._accessor();
+                that._old = that._accessor();
                 that._oldIndex = that.selectedIndex;
             } else {
                 return that._accessor();

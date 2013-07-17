@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "panelbar",
     name: "PanelBar",
@@ -52,7 +50,7 @@ kendo_module({
         DISABLEDCLASS = "k-state-disabled",
         SELECTEDCLASS = "k-state-selected",
         SELECTEDSELECTOR = "." + SELECTEDCLASS,
-        HIGHLIGHTEDCLASS = "k-state-highlighted",
+        HIGHLIGHTCLASS = "k-state-highlight",
         ACTIVEITEMSELECTOR = ITEM + ":not(.k-state-disabled)",
         clickableItems = ACTIVEITEMSELECTOR + " > .k-link",
         disabledItems = ITEM + ".k-state-disabled > .k-link",
@@ -162,7 +160,7 @@ kendo_module({
                 return item.encoded === false ? item.text : kendo.htmlEncode(item.text);
             },
             tag: function(item) {
-                return item.url ? "a" : "span";
+                return item.url || item.contentUrl ? "a" : "span";
             },
             groupAttributes: function(group) {
                 return group.expanded !== true ? " style='display:none'" : "";
@@ -177,7 +175,7 @@ kendo_module({
                 return item.content ? item.content : item.contentUrl ? "" : "&nbsp;";
             },
             contentUrl: function(item) {
-                return item.contentUrl ? kendo.attr("content-url") + '="' + item.contentUrl + '"' : "";
+                return item.contentUrl ? 'href="' + item.contentUrl + '"' : "";
             }
         };
 
@@ -245,14 +243,6 @@ kendo_module({
                     that._current(null);
                 })
                 .attr("role", "menu");
-
-            /*if (options.contentUrls) {
-                element.find("> .k-item")
-                    .each(function(index, item) {
-                        var span = $(item).find(LINKSELECTOR);
-                        span.replaceWith('<a class="k-link k-header" href="' + options.contentUrls[index] + '">' + span.html() + '</a>');
-                    });
-            }*/
 
             content = element.find("li." + ACTIVECLASS + " > ." + CONTENT);
 
@@ -332,8 +322,8 @@ kendo_module({
                         return that;
                     }
 
-                    element.find("." + HIGHLIGHTEDCLASS).removeClass(HIGHLIGHTEDCLASS);
-                    item.addClass(HIGHLIGHTEDCLASS);
+                    element.find("." + HIGHLIGHTCLASS).removeClass(HIGHLIGHTCLASS);
+                    item.addClass(HIGHLIGHTCLASS);
 
                     if (!useAnimation) {
                         animBackup = that.options.animation;
@@ -364,7 +354,7 @@ kendo_module({
                 var groups = item.find(GROUPS).add(item.find(CONTENTS));
 
                 if (!item.hasClass(DISABLEDCLASS) && groups.is(VISIBLE)) {
-                    item.removeClass(HIGHLIGHTEDCLASS);
+                    item.removeClass(HIGHLIGHTCLASS);
 
                     if (!useAnimation) {
                         animBackup = that.options.animation;
@@ -737,6 +727,11 @@ kendo_module({
 
             item = $(item).addClass("k-item").attr("role", "menuitem");
 
+            if (kendo.support.browser.msie) {  // IE10 doesn't apply list-style: none on invisible items otherwise.
+                item.css("list-style-position", "inside")
+                    .css("list-style-position", "");
+            }
+
             item
                 .children(IMG)
                 .addClass(IMAGE);
@@ -1011,10 +1006,10 @@ kendo_module({
             that._selected = item.attr(ARIA_SELECTED, true);
 
             element.find(selectableItems).removeClass(SELECTEDCLASS);
-            element.find("> .k-state-highlighted, .k-panel > .k-state-highlighted").removeClass(HIGHLIGHTEDCLASS);
+            element.find("> ." + HIGHLIGHTCLASS + ", .k-panel > ." + HIGHLIGHTCLASS).removeClass(HIGHLIGHTCLASS);
 
             link.addClass(SELECTEDCLASS);
-            link.parentsUntil(element, ITEM).filter(":has(.k-header)").addClass(HIGHLIGHTEDCLASS);
+            link.parentsUntil(element, ITEM).filter(":has(.k-header)").addClass(HIGHLIGHTCLASS);
             that._current(item);
         },
 

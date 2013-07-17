@@ -1,19 +1,18 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "imagebrowser",
     name: "ImageBrowser",
     category: "web",
     description: "",
-    depends: [ "listview", "upload" ]
+    hidden: true,
+    depends: [ "listview", "dropdownlist", "upload" ]
 });
 
 (function($, undefined) {
@@ -37,22 +36,24 @@ kendo_module({
         SIZEFIELD = "size",
         TYPEFIELD = "type",
         DEFAULTSORTORDER = { field: TYPEFIELD, dir: "asc" },
-        ARRANGEBYTMPL = kendo.template('<li data-#=ns#value="#=value#" class="k-item">${text}</li>'),
         EMPTYTILE = kendo.template('<li class="k-tile-empty"><strong>${text}</strong></li>'),
-        TOOLBARTMPL = '<div class="k-widget k-toolbar k-floatwrap">' +
+        TOOLBARTMPL = '<div class="k-widget k-toolbar k-header k-floatwrap">' +
                             '<div class="k-toolbar-wrap">' +
-                                '#if(showUpload) { # ' +
-                                    '<div class="k-widget k-upload"><div class="k-button k-button-icontext k-button-bare k-upload-button">' +
+                                '# if (showUpload) { # ' +
+                                    '<div class="k-widget k-upload"><div class="k-button k-button-icontext k-upload-button">' +
                                         '<span class="k-icon k-add"></span>#=messages.uploadFile#<input type="file" name="file" /></div></div>' +
-                                '#}#' +
-                                '#if(showCreate) {#' +
-                                    '<button type="button" class="k-button k-button-icon k-button-bare"><span class="k-icon k-addfolder"></span></button>' +
-                                '#}#' +
-                                '#if(showDelete) {#' +
-                                    '<button type="button" class="k-button k-button-icon k-button-bare k-state-disabled"><span class="k-icon k-delete"></span></button>&nbsp;' +
-                                '#}#' +
+                                '# } #' +
+
+                                '# if (showCreate) { #' +
+                                     '<button type="button" class="k-button k-button-icon"><span class="k-icon k-addfolder" /></button>' +
+                                '# } #' +
+
+                                '# if (showDelete) { #' +
+                                    '<button type="button" class="k-button k-button-icon k-state-disabled"><span class="k-icon k-delete" /></button>&nbsp;' +
+                                '# } #' +
                             '</div>' +
-                            '<div class="k-tiles-arrange">#=messages.orderBy#: <a href="\\#" class="k-link"><span>#=messages.orderByName#</span><span class="k-icon k-i-arrow-s"></span></a>' +
+                            '<div class="k-tiles-arrange">' +
+                                '<label>#=messages.orderBy#: <select /></label></a>' +
                             '</div>' +
                         '</div>';
 
@@ -155,15 +156,6 @@ kendo_module({
         };
     }
 
-    function fieldName(fields, name) {
-        var descriptor = fields[name];
-
-        if (isPlainObject(descriptor)) {
-            return descriptor.field || name;
-        }
-        return descriptor;
-    }
-
     function concatPaths(path, name) {
         if(path === undefined || !path.match(/\/$/)) {
             path = (path || "") + "/";
@@ -200,7 +192,7 @@ kendo_module({
 
             Widget.fn.init.call(that, element, options);
 
-            that.element.addClass("k-imagebrowser");
+            that.element.addClass("k-imagebrowser k-secondary");
 
             that.element
                 .on(CLICK + NS, ".k-toolbar button:not(.k-state-disabled):has(.k-delete)", proxy(that._deleteClick, that))
@@ -227,7 +219,7 @@ kendo_module({
                 deleteFile: 'Are you sure you want to delete "{0}"?',
                 invalidFileType: "The selected file \"{0}\" is not valid. Supported file types are {1}.",
                 overwriteFile: "A file with name \"{0}\" already exists in the current directory. Do you want to overwrite it?",
-                dropFilesHere: "drop files here to upload",
+                dropFilesHere: "drop file here to upload",
                 search: "Search"
             },
             transport: {},
@@ -250,8 +242,8 @@ kendo_module({
                 .add(that.toolbar)
                 .off(NS);
 
-            if (that.arrangeByPopup) {
-                that.arrangeByPopup.destroy();
+            if (that.arrangeBy) {
+                that.arrangeBy.destroy();
             }
 
             kendo.destroy(that.element);
@@ -263,10 +255,10 @@ kendo_module({
                 path,
                 imageUrl = that.options.transport.imageUrl;
 
-            if (selected && selected.get(that._getFieldName(TYPEFIELD)) === "f") {
-                path = concatPaths(that.path(), selected.get(that._getFieldName(NAMEFIELD))).replace(trimSlashesRegExp, "");
+            if (selected && selected.get(TYPEFIELD) === "f") {
+                path = concatPaths(that.path(), selected.get(NAMEFIELD)).replace(trimSlashesRegExp, "");
                 if (imageUrl) {
-                    path = isFunction(imageUrl) ? imageUrl(path) : kendo.format(imageUrl, path);
+                    path = isFunction(imageUrl) ? imageUrl(path) : kendo.format(imageUrl, encodeURIComponent(path));
                 }
                 return path;
             }
@@ -285,10 +277,10 @@ kendo_module({
             var that = this,
                 template = kendo.template(TOOLBARTMPL),
                 messages = that.options.messages,
-                link,
-                popup,
-                arrangeBy = [{ text: messages.orderByName, value: "name", ns: kendo.ns },
-                    { text: messages.orderBySize, value: "size", ns: kendo.ns }];
+                arrangeBy = [
+                    { text: messages.orderByName, value: "name" },
+                    { text: messages.orderBySize, value: "size" }
+                ];
 
             that.toolbar = $(template({
                     messages: messages,
@@ -307,34 +299,26 @@ kendo_module({
                         saveUrl: that.options.transport.uploadUrl,
                         autoUpload: true
                     },
-                    upload: proxy(that._fileUpload, that)
+                    upload: proxy(that._fileUpload, that),
+                    error: function(e) {
+                        that._error({ xhr: e.XMLHttpRequest, status: "error" });
+                    }
                 }).end();
 
             that.upload = that.toolbar
                 .find(".k-upload input")
                 .data("kendoUpload");
 
-            link = that.toolbar.find(".k-tiles-arrange a");
-
-            that.arrangeByPopup = popup = $("<ul>" + kendo.render(ARRANGEBYTMPL, arrangeBy) + "</ul>")
-                .kendoPopup({
-                    anchor: link
+            that.arrangeBy = that.toolbar.find(".k-tiles-arrange select")
+                .kendoDropDownList({
+                    dataSource: arrangeBy,
+                    dataTextField: "text",
+                    dataValueField: "value",
+                    change: function() {
+                        that.orderBy(this.value());
+                    }
                 })
-                .on(CLICK + NS, "li", function() {
-                    var item = $(this),
-                        field = item.attr(kendo.attr("value"));
-
-                    that.toolbar.find(".k-tiles-arrange a span:first").html(item.text());
-                    popup.close();
-
-                    that.orderBy(field);
-
-                }).data("kendoPopup");
-
-            link.on(CLICK + NS, function(e) {
-                e.preventDefault();
-                popup.toggle();
-            });
+                .data("kendoDropDownList");
 
             that._attachDropzoneEvents();
         },
@@ -402,8 +386,8 @@ kendo_module({
                 fileTypes = options.fileTypes,
                 filterRegExp = new RegExp(("(" + fileTypes.split(",").join(")|(") + ")").replace(/\*\./g , ".*."), "i"),
                 fileName = e.files[0].name,
-                fileNameField = that._getFieldName(NAMEFIELD),
-                sizeField = that._getFieldName(SIZEFIELD),
+                fileNameField = NAMEFIELD,
+                sizeField = SIZEFIELD,
                 model;
 
             if (filterRegExp.test(fileName)) {
@@ -431,8 +415,8 @@ kendo_module({
             var data = this.dataSource.data(),
                 idx,
                 result,
-                typeField = this._getFieldName(TYPEFIELD),
-                nameField = this._getFieldName(NAMEFIELD),
+                typeField = TYPEFIELD,
+                nameField = NAMEFIELD,
                 length;
 
             name = name.toLowerCase();
@@ -454,7 +438,7 @@ kendo_module({
                 length,
                 index = 0,
                 model = {},
-                typeField = that._getFieldName(TYPEFIELD),
+                typeField = TYPEFIELD,
                 view = that.dataSource.view(),
                 file = that._findFile(fileName);
 
@@ -474,8 +458,8 @@ kendo_module({
             }
 
             model[typeField] = "f";
-            model[that._getFieldName(NAMEFIELD)] = fileName;
-            model[that._getFieldName(SIZEFIELD)] = 0;
+            model[NAMEFIELD] = fileName;
+            model[SIZEFIELD] = 0;
 
             return that.dataSource.insert(++index, model);
         },
@@ -485,8 +469,8 @@ kendo_module({
                 idx,
                 length,
                 lastDirectoryIdx = 0,
-                typeField = that._getFieldName(TYPEFIELD),
-                nameField = that._getFieldName(NAMEFIELD),
+                typeField = TYPEFIELD,
+                nameField = NAMEFIELD,
                 view = that.dataSource.data(),
                 name = that._nameDirectory(),
                 model = new that.dataSource.reader.model();
@@ -540,8 +524,8 @@ kendo_module({
 
         _nameExists: function(name, uid) {
             var data = this.dataSource.data(),
-                typeField = this._getFieldName(TYPEFIELD),
-                nameField = this._getFieldName(NAMEFIELD),
+                typeField = TYPEFIELD,
+                nameField = NAMEFIELD,
                 idx,
                 length;
 
@@ -559,8 +543,8 @@ kendo_module({
             var name = "New folder",
                 data = this.dataSource.data(),
                 directoryNames = [],
-                typeField = this._getFieldName(TYPEFIELD),
-                nameField = this._getFieldName(NAMEFIELD),
+                typeField = TYPEFIELD,
+                nameField = NAMEFIELD,
                 candidate,
                 idx,
                 length;
@@ -587,14 +571,14 @@ kendo_module({
 
         orderBy: function(field) {
             this.dataSource.sort([
-                { field: this._getFieldName(TYPEFIELD), dir: "asc" },
-                { field: this._getFieldName(field), dir: "asc" }
+                { field: TYPEFIELD, dir: "asc" },
+                { field: field, dir: "asc" }
             ]);
         },
 
         search: function(name) {
             this.dataSource.filter({
-                field: this._getFieldName(NAMEFIELD),
+                field: NAMEFIELD,
                 operator: "contains",
                 value: name
             });
@@ -640,7 +624,7 @@ kendo_module({
             if (li.filter("[" + kendo.attr("type") + "=d]").length) {
                 var folder = that.dataSource.getByUid(li.attr(kendo.attr("uid")));
                 if (folder) {
-                    that.path(concatPaths(that.path(), folder.get(that._getFieldName(NAMEFIELD))));
+                    that.path(concatPaths(that.path(), folder.get(NAMEFIELD)));
                     that.breadcrumbs.value(that.path());
                 }
             } else if (li.filter("[" + kendo.attr("type") + "=f]").length) {
@@ -654,7 +638,7 @@ kendo_module({
             if (selected) {
                 this.toolbar.find(".k-delete").parent().removeClass("k-state-disabled");
 
-                if (selected.get(this._getFieldName(TYPEFIELD)) === "f") {
+                if (selected.get(TYPEFIELD) === "f") {
                     this.trigger(CHANGE);
                 }
             }
@@ -679,16 +663,8 @@ kendo_module({
 
             if (isPlainObject(options.schema)) {
                 dataSource.schema = options.schema;
-                if (isPlainObject(options.schema.model) && options.schema.model.fields) {
-                    typeSortOrder.field = fieldName(options.schema.model.fields, TYPEFIELD);
-                    nameSortOrder.field = fieldName(options.schema.model.fields, NAMEFIELD);
-                }
             } else if (transport.type && isPlainObject(kendo.data.schemas[transport.type])) {
                 schema = kendo.data.schemas[transport.type];
-                if (isPlainObject(schema.model) && schema.model.fields) {
-                    typeSortOrder.field = fieldName(schema.model.fields, TYPEFIELD);
-                    nameSortOrder.field = fieldName(schema.model.fields, NAMEFIELD);
-                }
             }
 
             if (that.dataSource && that._errorHandler) {
@@ -757,18 +733,18 @@ kendo_module({
             var that = this,
                 element = $(li),
                 dataItem = that.dataSource.getByUid(element.attr(kendo.attr("uid"))),
-                name = dataItem.get(that._getFieldName(NAMEFIELD)),
+                name = dataItem.get(NAMEFIELD),
                 thumbnailUrl = that.options.transport.thumbnailUrl,
-                img = $("<img />", {
-                    alt: name
-                })
-                .hide()
-                .on("load" + NS, function() {
-                    $(this).prev().remove().end().addClass("k-image").fadeIn();
-                }),
+                img = $("<img />", { alt: name }),
                 urlJoin = "?";
 
+            img.hide()
+               .on("load" + NS, function() {
+                   $(this).prev().remove().end().addClass("k-image").fadeIn();
+               });
+
             element.find(".k-loading").after(img);
+
             if (isFunction(thumbnailUrl)) {
                 thumbnailUrl = thumbnailUrl(that.path(), encodeURIComponent(name));
             } else {
@@ -778,7 +754,8 @@ kendo_module({
 
                 thumbnailUrl = thumbnailUrl + urlJoin + "path=" + that.path() + encodeURIComponent(name);
             }
-            // IE8 will trigger the load event immediately when the src is assign
+
+            // IE8 will trigger the load event immediately when the src is assigned
             // if the image is loaded from the cache
             img.attr("src", thumbnailUrl);
 
@@ -817,17 +794,16 @@ kendo_module({
         },
 
         _editTmpl: function() {
-            var that = this,
-                html = '<li class="k-tile k-state-selected" ' + kendo.attr("uid") + '="#=uid#" ';
+            var html = '<li class="k-tile k-state-selected" ' + kendo.attr("uid") + '="#=uid#" ';
 
-            html += kendo.attr("type") + '="${' + that._getFieldName(TYPEFIELD) + '}">';
-            html += '#if(' + that._getFieldName(TYPEFIELD) + ' == "d") { #';
+            html += kendo.attr("type") + '="${' + TYPEFIELD + '}">';
+            html += '#if(' + TYPEFIELD + ' == "d") { #';
             html += '<div class="k-thumb"><span class="k-icon k-folder"></span></div>';
             html += "#}else{#";
             html += '<div class="k-thumb"><span class="k-icon k-loading"></span></div>';
             html += "#}#";
-            html += '#if(' + that._getFieldName(TYPEFIELD) + ' == "d") { #';
-            html += '<input class="k-input" ' + kendo.attr("bind") + '="value:' + that._getFieldName(NAMEFIELD) + '"/>';
+            html += '#if(' + TYPEFIELD + ' == "d") { #';
+            html += '<input class="k-input" ' + kendo.attr("bind") + '="value:' + NAMEFIELD + '"/>';
             html += "#}#";
             html += '</li>';
 
@@ -838,8 +814,8 @@ kendo_module({
             var that = this,
                 html = '<li class="k-tile" ' + kendo.attr("uid") + '="#=uid#" ';
 
-            html += kendo.attr("type") + '="${' + that._getFieldName(TYPEFIELD) + '}">';
-            html += '#if(' + that._getFieldName(TYPEFIELD) + ' == "d") { #';
+            html += kendo.attr("type") + '="${' + TYPEFIELD + '}">';
+            html += '#if(' + TYPEFIELD + ' == "d") { #';
             html += '<div class="k-thumb"><span class="k-icon k-folder"></span></div>';
             html += "#}else{#";
             if (that.options.transport && that.options.transport.thumbnailUrl) {
@@ -848,15 +824,11 @@ kendo_module({
                 html += '<div class="k-thumb"><span class="k-icon k-file"></span></div>';
             }
             html += "#}#";
-            html += '<strong>${' + that._getFieldName(NAMEFIELD) + '}</strong>';
-            html += '#if(' + that._getFieldName(TYPEFIELD) + ' == "f") { # <span class="k-filesize">${this.sizeFormatter(' + that._getFieldName(SIZEFIELD) + ')}</span> #}#';
+            html += '<strong>${' + NAMEFIELD + '}</strong>';
+            html += '#if(' + TYPEFIELD + ' == "f") { # <span class="k-filesize">${this.sizeFormatter(' + SIZEFIELD + ')}</span> #}#';
             html += '</li>';
 
             return proxy(kendo.template(html), { sizeFormatter: sizeFormatter } );
-        },
-
-        _getFieldName: function(name) {
-            return fieldName(this.dataSource.reader.model.fields, name);
         },
 
         path: function(value) {
@@ -965,7 +937,7 @@ kendo_module({
                 wrapper = element.parents(".k-search-wrap");
 
             element[0].style.width = "";
-            element.addClass("k-input k-textbox");
+            element.addClass("k-input");
 
             if (!wrapper.length) {
                 wrapper = element.wrap($('<div class="k-widget k-search-wrap k-textbox"/>')).parent();
@@ -1095,7 +1067,7 @@ kendo_module({
             element.addClass("k-input");
 
             if (!wrapper.length) {
-                wrapper = element.wrap($('<div class="k-widget k-breadcrumbs k-header k-state-default"/>')).parent();
+                wrapper = element.wrap($('<div class="k-widget k-breadcrumbs k-textbox"/>')).parent();
             }
 
             overlay = wrapper.find(".k-breadcrumbs-wrap");

@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 (function($, evil, undefined) {
     var kendo = window.kendo = window.kendo || {},
         extend = $.extend,
@@ -23,6 +21,7 @@
         percentRegExp = /%/,
         formatRegExp = /\{(\d+)(:[^\}]+)?\}/g,
         boxShadowRegExp = /(\d+?)px\s*(\d+?)px\s*(\d+?)px\s*(\d+?)?/i,
+        numberRegExp = /^(\+|-?)\d+(\.?)\d*$/,
         FUNCTION = "function",
         STRING = "string",
         NUMBER = "number",
@@ -34,6 +33,8 @@
         setterCache = {},
         slice = [].slice,
         globalize = window.Globalize;
+
+    kendo.version = "2013.2.716";
 
     function Class() {}
 
@@ -174,14 +175,13 @@
         unbind: function(eventName, handler) {
             var that = this,
                 events = that._events[eventName],
-                idx,
-                length;
+                idx;
 
             if (eventName === undefined) {
                 that._events = {};
             } else if (events) {
                 if (handler) {
-                    for (idx = 0, length = events.length; idx < length; idx++) {
+                    for (idx = events.length - 1; idx >= 0; idx--) {
                         if (events[idx] === handler) {
                             events.splice(idx, 1);
                         }
@@ -246,6 +246,7 @@
                 argumentName = paramName.match(argumentNameRegExp)[0],
                 useWithBlock = settings.useWithBlock,
                 functionBody = "var o,e=kendo.htmlEncode;",
+                fn,
                 parts,
                 idx;
 
@@ -281,7 +282,9 @@
             functionBody = functionBody.replace(sharpRegExp, "#");
 
             try {
-                return new Function(argumentName, functionBody);
+                fn = new Function(argumentName, functionBody);
+                fn._slotCount = Math.floor(parts.length / 2);
+                return fn;
             } catch(e) {
                 throw new Error(kendo.format("Invalid template:'{0}' Generated code:'{1}'", template, functionBody));
             }
@@ -446,7 +449,7 @@ function pad(number, digits, end) {
 (function() {
     var dateFormatRegExp = /dddd|ddd|dd|d|MMMM|MMM|MM|M|yyyy|yy|HH|H|hh|h|mm|m|fff|ff|f|tt|ss|s|"[^"]*"|'[^']*'/g,
         standardFormatRegExp =  /^(n|c|p|e)(\d*)$/i,
-        literalRegExp = /["'].*?["']/g,
+        literalRegExp = /(\\.)|(['][^']*[']?)|(["][^"]*["]?)/g,
         commaRegExp = /\,/g,
         EMPTY = "",
         POINT = ".",
@@ -454,7 +457,8 @@ function pad(number, digits, end) {
         SHARP = "#",
         ZERO = "0",
         PLACEHOLDER = "??",
-        EN = "en-US";
+        EN = "en-US",
+        objectToString = {}.toString;
 
     //cultures
     kendo.cultures = {"en-US" : {
@@ -722,7 +726,7 @@ function pad(number, digits, end) {
                 number *= 100;
             }
 
-            number = number.toFixed(precision);
+            number = round(number, precision);
             number = number.split(POINT);
 
             integer = number[0];
@@ -781,6 +785,24 @@ function pad(number, digits, end) {
             number = -number;
         }
 
+        /*if (format.indexOf("'") > -1 || format.indexOf("\"") > -1) {
+            format = format.replace(literalRegExp, function(match) {
+                literals.push(match.substring(1, match.length - 1));
+                return PLACEHOLDER;
+            });
+        }*/
+
+        if (format.indexOf("'") > -1 || format.indexOf("\"") > -1 || format.indexOf("\\") > -1) {
+            format = format.replace(literalRegExp, function (match) {
+                var quoteChar = match.charAt(0).replace("\\", ""),
+                    literal = match.slice(1).replace(quoteChar, "");
+
+                literals.push(literal);
+
+                return PLACEHOLDER;
+            });
+        }
+
         format = format.split(";");
         if (negative && format[1]) {
             //get negative format
@@ -797,13 +819,6 @@ function pad(number, digits, end) {
             format = format[0];
         }
 
-        if (format.indexOf("'") > -1 || format.indexOf("\"") > -1) {
-            format = format.replace(literalRegExp, function(match) {
-                literals.push(match);
-                return PLACEHOLDER;
-            });
-        }
-
         percentIndex = format.indexOf("%");
         currencyIndex = format.indexOf("$");
 
@@ -812,11 +827,7 @@ function pad(number, digits, end) {
 
         //multiply number if the format has percent
         if (isPercent) {
-            if (format[percentIndex - 1] !== "\\") {
-                number *= 100;
-            } else {
-                format = format.split("\\").join("");
-            }
+            number *= 100;
         }
 
         if (isCurrency && format[currencyIndex - 1] === "\\") {
@@ -843,9 +854,15 @@ function pad(number, digits, end) {
         length = format.length;
 
         if (decimalIndex != -1) {
+            fraction = number.toString().split("e");
+            if (fraction[1]) {
+                fraction = round(number, Math.abs(fraction[1]));
+            } else {
+                fraction = fraction[0];
+            }
+            fraction = fraction.split(POINT)[1] || EMPTY;
             zeroIndex = format.lastIndexOf(ZERO) - decimalIndex;
             sharpIndex = format.lastIndexOf(SHARP) - decimalIndex;
-            fraction = number.toString().split(POINT)[1] || EMPTY;
             hasZero = zeroIndex > -1;
             hasSharp = sharpIndex > -1;
             idx = fraction.length;
@@ -866,10 +883,10 @@ function pad(number, digits, end) {
             }
 
             if (idx > -1) {
-                number = number.toFixed(idx);
+                number = round(number, idx);
             }
         } else {
-            number = number.toFixed(0);
+            number = round(number);
         }
 
         sharpIndex = format.indexOf(SHARP);
@@ -978,8 +995,9 @@ function pad(number, digits, end) {
                 number = value;
             }
 
-            if (literals[0]) {
-                length = literals.length;
+            length = literals.length;
+
+            if (length) {
                 for (idx = 0; idx < length; idx++) {
                     number = number.replace(PLACEHOLDER, literals[idx]);
                 }
@@ -989,9 +1007,14 @@ function pad(number, digits, end) {
         return number;
     }
 
+    var round = function(value, precision) {
+        var power = Math.pow(10, precision || 0);
+        return (Math.round(value * power) / power).toFixed(precision);
+    };
+
     var toString = function(value, fmt, culture) {
         if (fmt) {
-            if (value instanceof Date) {
+            if (objectToString.call(value) === "[object Date]") {
                 return formatDate(value, fmt, culture);
             } else if (typeof value === NUMBER) {
                 return formatNumber(value, fmt, culture);
@@ -1031,8 +1054,9 @@ function pad(number, digits, end) {
         }
     };
 
+    kendo._round = round;
     kendo.toString = toString;
-    })();
+})();
 
 
 (function() {
@@ -1045,7 +1069,8 @@ function pad(number, digits, end) {
         numberRegExp = {
             2: /^\d{1,2}/,
             4: /^\d{4}/
-        };
+        },
+        objectToString = {}.toString;
 
     function outOfRange(value, start, end) {
         return !(value >= start && value <= end);
@@ -1060,10 +1085,32 @@ function pad(number, digits, end) {
     }
 
     //if date's day is different than the typed one - adjust
-    function adjustDate(date, hours) {
+    function adjustDST(date, hours) {
         if (!hours && date.getHours() === 23) {
             date.setHours(date.getHours() + 2);
         }
+    }
+
+    function lowerArray(data) {
+        var idx = 0,
+            length = data.length,
+            array = [];
+
+        for (; idx < length; idx++) {
+            array[idx] = (data[idx] + "").toLowerCase();
+        }
+
+        return array;
+    }
+
+    function lowerLocalInfo(localInfo) {
+        var newLocalInfo = {}, property;
+
+        for (property in localInfo) {
+            newLocalInfo[property] = lowerArray(localInfo[property]);
+        }
+
+        return newLocalInfo;
     }
 
     function parseExact(value, format, culture) {
@@ -1093,16 +1140,22 @@ function pad(number, digits, end) {
                 }
                 return null;
             },
-            getIndexByName = function (names) {
+            getIndexByName = function (names, lower) {
                 var i = 0,
                     length = names.length,
-                    name, nameLength;
+                    name, nameLength,
+                    subValue;
 
                 for (; i < length; i++) {
                     name = names[i];
                     nameLength = name.length;
+                    subValue = value.substr(valueIdx, nameLength);
 
-                    if (value.substr(valueIdx, nameLength) == name) {
+                    if (lower) {
+                        subValue = subValue.toLowerCase();
+                    }
+
+                    if (subValue == name) {
                         valueIdx += nameLength;
                         return i + 1;
                     }
@@ -1161,14 +1214,21 @@ function pad(number, digits, end) {
             } else {
                 if (ch === "d") {
                     count = lookAhead("d");
-                    day = count < 3 ? getNumber(2) : getIndexByName(calendar.days[count == 3 ? "namesAbbr" : "names"]);
+                    if (!calendar._lowerDays) {
+                        calendar._lowerDays = lowerLocalInfo(calendar.days);
+                    }
+
+                    day = count < 3 ? getNumber(2) : getIndexByName(calendar._lowerDays[count == 3 ? "namesAbbr" : "names"], true);
 
                     if (day === null || outOfRange(day, 1, 31)) {
                         return null;
                     }
                 } else if (ch === "M") {
                     count = lookAhead("M");
-                    month = count < 3 ? getNumber(2) : getIndexByName(calendar.months[count == 3 ? 'namesAbbr' : 'names']);
+                    if (!calendar._lowerMonths) {
+                        calendar._lowerMonths = lowerLocalInfo(calendar.months);
+                    }
+                    month = count < 3 ? getNumber(2) : getIndexByName(calendar._lowerMonths[count == 3 ? 'namesAbbr' : 'names'], true);
 
                     if (month === null || outOfRange(month, 1, 12)) {
                         return null;
@@ -1316,7 +1376,7 @@ function pad(number, digits, end) {
             value = new Date(Date.UTC(year, month, day, hours, minutes, seconds, milliseconds));
         } else {
             value = new Date(year, month, day, hours, minutes, seconds, milliseconds);
-            adjustDate(value, hours);
+            adjustDST(value, hours);
         }
 
         if (year < 100) {
@@ -1330,10 +1390,8 @@ function pad(number, digits, end) {
         return value;
     }
 
-    kendo._adjustDate = adjustDate;
-
     kendo.parseDate = function(value, formats, culture) {
-        if (value instanceof Date) {
+        if (objectToString.call(value) === "[object Date]") {
             return value;
         }
 
@@ -1358,17 +1416,25 @@ function pad(number, digits, end) {
             for (; idx < length; idx++) {
                 formats[idx] = patterns[formatsSequence[idx]];
             }
-            formats[idx] = "ddd MMM dd yyyy HH:mm:ss";
-            formats[++idx] = "yyyy-MM-ddTHH:mm:ss.fffffffzzz";
-            formats[++idx] = "yyyy-MM-ddTHH:mm:ss.fffzzz";
-            formats[++idx] = "yyyy-MM-ddTHH:mm:sszzz";
-            formats[++idx] = "yyyy-MM-ddTHH:mmzzz";
-            formats[++idx] = "yyyy-MM-ddTHH:mmzz";
-            formats[++idx] = "yyyy-MM-ddTHH:mm:ss";
-            formats[++idx] = "yyyy-MM-ddTHH:mm";
-            formats[++idx] = "yyyy-MM-dd";
 
             idx = 0;
+
+            formats.push(
+                "yyyy/MM/dd HH:mm:ss",
+                "yyyy/MM/dd HH:mm",
+                "yyyy/MM/dd",
+                "ddd MMM dd yyyy HH:mm:ss",
+                "yyyy-MM-ddTHH:mm:ss.fffffffzzz",
+                "yyyy-MM-ddTHH:mm:ss.fffzzz",
+                "yyyy-MM-ddTHH:mm:sszzz",
+                "yyyy-MM-ddTHH:mmzzz",
+                "yyyy-MM-ddTHH:mmzz",
+                "yyyy-MM-ddTHH:mm:ss",
+                "yyyy-MM-ddTHH:mm",
+                "yyyy-MM-dd HH:mm:ss",
+                "yyyy-MM-dd HH:mm",
+                "yyyy-MM-dd"
+            );
         }
 
         formats = isArray(formats) ? formats: [formats];
@@ -1409,7 +1475,7 @@ function pad(number, digits, end) {
             currency = number.currency,
             symbol = currency.symbol,
             percentSymbol = percent.symbol,
-            negative = value.indexOf("-") > -1,
+            negative = value.indexOf("-"),
             parts, isPercent;
 
         //handle exponential number
@@ -1419,6 +1485,12 @@ function pad(number, digits, end) {
                 value = null;
             }
             return value;
+        }
+
+        if (negative > 0) {
+            return null;
+        } else {
+            negative = negative > -1;
         }
 
         if (value.indexOf(symbol) > -1 || (format && format.toLowerCase().indexOf("c") > -1)) {
@@ -1457,7 +1529,7 @@ function pad(number, digits, end) {
 
     if (globalize) {
         kendo.parseDate = function (value, format, culture) {
-            if (value instanceof Date) {
+            if (objectToString.call(value) === "[object Date]") {
                 return value;
             }
 
@@ -1469,11 +1541,13 @@ function pad(number, digits, end) {
                 return value;
             }
 
-            if (value === undefined) {
+            if (value === undefined || value === null) {
                return null;
             }
 
-            return globalize.parseFloat(value, culture);
+            value = globalize.parseFloat(value, culture);
+
+            return isNaN(value) ? null : value;
         };
     }
 })();
@@ -1544,9 +1618,8 @@ function pad(number, digits, end) {
         }
 
         if (browser.msie && math.floor(browser.version) <= 7) {
-            element.css({
-                zoom: 1
-            });
+            element.css({ zoom: 1 });
+            element.children(".k-menu").width(element.width());
         }
 
         return element.parent();
@@ -1565,6 +1638,7 @@ function pad(number, digits, end) {
 
     function deepExtendOne(destination, source) {
         var ObservableArray = kendo.data.ObservableArray,
+            DataSource = kendo.data.DataSource,
             property,
             propValue,
             propType,
@@ -1573,7 +1647,8 @@ function pad(number, digits, end) {
         for (property in source) {
             propValue = source[property];
             propType = typeof propValue;
-            if (propType === OBJECT && propValue !== null && propValue.constructor !== Array && propValue.constructor !== ObservableArray) {
+            if (propType === OBJECT && propValue !== null && propValue.constructor !== Array &&
+                propValue.constructor !== ObservableArray && propValue.constructor !== DataSource) {
                 if (propValue instanceof Date) {
                     destination[property] = new Date(propValue.getTime());
                 } else {
@@ -1695,8 +1770,24 @@ function pad(number, digits, end) {
         support.transitions = transitions;
 
         support.devicePixelRatio = window.devicePixelRatio === undefined ? 1 : window.devicePixelRatio;
-        support.screenWidth = window.outerWidth || window.screen ? window.screen.availWidth : window.innerWidth;
-        support.screenHeight = window.outerHeight || window.screen ? window.screen.availHeight : window.innerHeight;
+
+        try {
+            support.screenWidth = window.outerWidth || window.screen ? window.screen.availWidth : window.innerWidth;
+            support.screenHeight = window.outerHeight || window.screen ? window.screen.availHeight : window.innerHeight;
+
+            support.zoomLevel = function() {
+                return support.touch ? (document.documentElement.clientWidth / window.innerWidth) :
+                       support.pointers ? ((top || window).outerWidth / (top || window).innerWidth) : 1;
+            };
+        } catch(e) {
+            //window.outerWidth throws error when in IE showModalDialog.
+            support.screenWidth = window.screen.availWidth;
+            support.screenHeight = window.screen.availHeight;
+
+            support.zoomLevel = function() {
+                return 1;
+            };
+        }
 
         support.detectOS = function (ua) {
             var os = false, minorVersion, match = [],
@@ -1751,7 +1842,7 @@ function pad(number, digits, end) {
                         os.minorVersion = match[3].replace("_", ".");
                         minorVersion = os.minorVersion.replace(".", "").substr(0, 2);
                         os.flatVersion = os.majorVersion + minorVersion + (new Array(3 - (minorVersion.length < 3 ? minorVersion.length : 2)).join("0"));
-                        os.appMode = window.navigator.standalone || (/file|local/).test(window.location.protocol) || typeof window.PhoneGap !== UNDEFINED || typeof window.cordova !== UNDEFINED; // Use file protocol to detect appModes.
+                        os.appMode = window.navigator.standalone || (/file|local|wmapp/).test(window.location.protocol) || typeof window.PhoneGap !== UNDEFINED || typeof window.cordova !== UNDEFINED; // Use file protocol to detect appModes.
 
                         if (os.android && (support.devicePixelRatio < 1.5 && os.flatVersion < 400 || notAndroidPhone) && (support.screenWidth > 800 || support.screenHeight > 800)) {
                             os.tablet = agent;
@@ -1766,6 +1857,7 @@ function pad(number, digits, end) {
 
         var mobileOS = support.mobileOS = support.detectOS(navigator.userAgent);
 
+        support.wpDevicePixelRatio = mobileOS.wp ? screen.width / 320 : 0;
         support.kineticScrollNeeded = mobileOS && (support.touch || support.pointers);
 
         support.hasNativeScrolling = false;
@@ -1805,6 +1897,8 @@ function pad(number, digits, end) {
 
         support.browser = detectBrowser(navigator.userAgent);
 
+        support.cssBorderSpacing = typeof document.documentElement.style.borderSpacing != "undefined" && !(support.browser.msie && support.browser.version < 8);
+
         (function(browser) {
             // add browser-specific CSS class
             var cssClass,
@@ -1826,11 +1920,6 @@ function pad(number, digits, end) {
                 $(document.documentElement).addClass("k-" + cssClass + " k-" + cssClass + majorVersion);
             }
         })(support.browser);
-
-        support.zoomLevel = function() {
-            return support.touch ? (document.documentElement.clientWidth / window.innerWidth) :
-                   support.pointers ? (window.outerWidth / window.innerWidth) : 1;
-        };
 
         support.eventCapture = document.documentElement.addEventListener;
 
@@ -1856,6 +1945,12 @@ function pad(number, digits, end) {
 
               return false;
           };
+
+        support.pushState = window.history && window.history.pushState;
+
+        var documentMode = document.documentMode;
+
+        support.hashChange = ("onhashchange" in window) && !(support.browser.msie && (!documentMode || documentMode <= 8)); // old IE detection
     })();
 
 
@@ -1868,10 +1963,6 @@ function pad(number, digits, end) {
         }
 
         return result;
-    }
-
-    function isNodeEmpty(element) {
-        return $.trim($(element).contents().filter(function () { return this.nodeType != 8; }).html()) === "";
     }
 
     function getOffset(element, type, positioned) {
@@ -1924,10 +2015,12 @@ function pad(number, digits, end) {
     }
 
     function fx(element) {
-        return new kendo.fx.Element(element);
+        return new kendo.effects.Element(element);
     }
 
-    $.extend(fx, {
+    var effects = {};
+
+    $.extend(effects, {
         Element: function(element) {
             this.element = $(element);
         },
@@ -2016,7 +2109,7 @@ function pad(number, digits, end) {
         for (; idx < length; idx ++) {
             instance = $(element[idx]);
             instance.queue(function() {
-                fx.promise(instance, prepareAnimationOptions(options, duration, reverse, complete));
+                effects.promise(instance, prepareAnimationOptions(options, duration, reverse, complete));
             });
         }
 
@@ -2024,7 +2117,7 @@ function pad(number, digits, end) {
     }
 
     function animateTo(element, destination, options, duration, reverse, complete) {
-        return fx.transitionPromise(element, destination, prepareAnimationOptions(options, duration, reverse, complete));
+        return effects.transitionPromise(element, destination, prepareAnimationOptions(options, duration, reverse, complete));
     }
 
     function toggleClass(element, classes, options, add) {
@@ -2078,13 +2171,10 @@ function pad(number, digits, end) {
 
     if (support.touch) {
 
-        var mobileChrome = (support.mobileOS.browser == "chrome" && !support.mobileOS.ios);
-
         eventTarget = function(e) {
-            var touches = "originalEvent" in e ? e.originalEvent.changedTouches : "changedTouches" in e ? e.changedTouches : null,
-                property = mobileChrome ? "screen" : "client";
+            var touches = "originalEvent" in e ? e.originalEvent.changedTouches : "changedTouches" in e ? e.changedTouches : null;
 
-            return touches ? document.elementFromPoint(touches[0][property + "X"], touches[0][property + "Y"]) : e.target;
+            return touches ? document.elementFromPoint(touches[0].clientX, touches[0].clientY) : e.target;
         };
 
         each(["swipe", "swipeLeft", "swipeRight", "swipeUp", "swipeDown", "doubleTap", "tap"], function(m, value) {
@@ -2159,6 +2249,7 @@ function pad(number, digits, end) {
     extend(kendo, {
         ui: kendo.ui || {},
         fx: kendo.fx || fx,
+        effects: kendo.effects || effects,
         mobile: kendo.mobile || {},
         data: kendo.data || {},
         dataviz: kendo.dataviz || {ui: { roles: {}}},
@@ -2192,7 +2283,6 @@ function pad(number, digits, end) {
         deepExtend: deepExtend,
         getComputedStyles: getComputedStyles,
         size: size,
-        isNodeEmpty: isNodeEmpty,
         getOffset: kendo.getOffset || getOffset,
         parseEffects: kendo.parseEffects || parseEffects,
         toggleClass: kendo.toggleClass || toggleClass,
@@ -2266,6 +2356,9 @@ function pad(number, digits, end) {
             return role.replace(/(\S+)/g, "[" + kendo.attr("role") + "=$1],").slice(0, -1);
         },
 
+        triggeredByInput: function(e) {
+            return (/^(label|input|textarea|select)$/i).test(e.target.tagName);
+        },
 
         logToConsole: function(message) {
             var console = window.console;
@@ -2334,6 +2427,7 @@ function pad(number, digits, end) {
             var that = this;
 
             that.element.removeData("kendo" + that.options.prefix + that.options.name);
+            that.element.removeData("handler");
 
             that.unbind();
         }
@@ -2365,7 +2459,7 @@ function pad(number, digits, end) {
             value = true;
         } else if (value === "false") {
             value = false;
-        } else if (!isNaN(parseFloat(value))) {
+        } else if (numberRegExp.test(value)) {
             value = parseFloat(value);
         } else if (jsonRegExp.test(value) && !jsonFormatRegExp.test(value)) {
             value = evil("(" + value + ")");
@@ -2506,14 +2600,23 @@ function pad(number, digits, end) {
         Widget: Widget,
         roles: {},
         progress: function(container, toggle) {
-            var mask = container.find(".k-loading-mask");
+            var mask = container.find(".k-loading-mask"),
+                support = kendo.support,
+                browser = support.browser,
+                isRtl, leftRight, webkitCorrection, containerScrollLeft;
 
             if (toggle) {
                 if (!mask.length) {
+                    isRtl = support.isRtl(container);
+                    leftRight = isRtl ? "right" : "left";
+                    containerScrollLeft = container.scrollLeft();
+                    webkitCorrection = browser.webkit ? (!isRtl ? 0 : container[0].scrollWidth - container.width() - 2 * containerScrollLeft) : 0;
+
                     mask = $("<div class='k-loading-mask'><span class='k-loading-text'>Loading...</span><div class='k-loading-image'/><div class='k-loading-color'/></div>")
                         .width("100%").height("100%")
-                        .prependTo(container)
-                        .css({ top: container.scrollTop(), left: container.scrollLeft() });
+                        .css("top", container.scrollTop())
+                        .css(leftRight, Math.abs(containerScrollLeft) + webkitCorrection)
+                        .prependTo(container);
                 }
             } else if (mask) {
                 mask.remove();
@@ -2577,7 +2680,7 @@ function pad(number, digits, end) {
         }
     });
 
-    var ContainerNullObject = { bind: $.noop };
+    var ContainerNullObject = { bind: function () { return this; } };
 
     var MobileWidget = Widget.extend({
         init: function(element, options) {
@@ -2598,12 +2701,12 @@ function pad(number, digits, end) {
         events: [],
 
         view: function() {
-            var viewElement = this.element.closest(kendo.roleSelector("view splitview modalview"));
+            var viewElement = this.element.closest(kendo.roleSelector("view splitview modalview drawer"));
             return kendo.widgetInstance(viewElement, kendo.mobile.ui);
         },
 
         container: function() {
-            var element = this.element.closest(kendo.roleSelector("view layout modalview"));
+            var element = this.element.closest(kendo.roleSelector("view layout modalview drawer"));
             return kendo.widgetInstance(element, kendo.mobile.ui) || ContainerNullObject;
         }
     });
@@ -2654,6 +2757,11 @@ function pad(number, digits, end) {
         }
 
         $(window).on(support.resize, handler);
+        return handler;
+    };
+
+    kendo.unbindResize = function(callback) {
+        $(window).off(support.resize, callback);
     };
 
     kendo.attrValue = function(element, key) {
@@ -2773,11 +2881,11 @@ function pad(number, digits, end) {
         };
 
         // Create MSPointerEnter/MSPointerLeave events using mouseover/out and event-time checks
-        jQuery.each({
+        $.each({
             MSPointerEnter: "MSPointerOver",
             MSPointerLeave: "MSPointerOut"
         }, function( orig, fix ) {
-            jQuery.event.special[ orig ] = {
+            $.event.special[ orig ] = {
                 delegateType: fix,
                 bindType: fix,
 
@@ -2789,7 +2897,7 @@ function pad(number, digits, end) {
 
                     // For mousenter/leave call the handler if related is outside the target.
                     // NB: No relatedTarget if the mouse left/entered the browser window
-                    if ( !related || (related !== target && !jQuery.contains( target, related )) ) {
+                    if ( !related || (related !== target && !$.contains( target, related )) ) {
                         event.type = handleObj.origType;
                         ret = handleObj.handler.apply( this, arguments );
                         event.type = fix;
@@ -2915,6 +3023,360 @@ function pad(number, digits, end) {
 
     kendo.jQuery = kendoJQuery;
     kendo.eventMap = eventMap;
+
+    kendo.timezone = (function(){
+        var months =  { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+        var days = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+        function ruleToDate(year, rule) {
+            var date;
+            var targetDay;
+            var ourDay;
+            var month = rule[3];
+            var on = rule[4];
+            var time = rule[5];
+            var cache = rule[8];
+
+            if (!cache) {
+                rule[8] = cache = {};
+            }
+
+            if (cache[year]) {
+                return cache[year];
+            }
+
+            if (!isNaN(on)) {
+                date = new Date(Date.UTC(year, months[month], on, time[0], time[1], time[2], 0));
+            } else if (on.indexOf("last") === 0) {
+                date = new Date(Date.UTC(year, months[month] + 1, 1, time[0] - 24, time[1], time[2], 0));
+
+                targetDay = days[on.substr(4, 3)];
+                ourDay = date.getUTCDay();
+
+                date.setUTCDate(date.getUTCDate() + targetDay - ourDay - (targetDay > ourDay ? 7 : 0));
+            } else if (on.indexOf(">=") >= 0) {
+                date = new Date(Date.UTC(year, months[month], on.substr(5), time[0], time[1], time[2], 0));
+
+                targetDay = days[on.substr(0, 3)];
+                ourDay = date.getUTCDay();
+
+                date.setUTCDate(date.getUTCDate() + targetDay - ourDay + (targetDay < ourDay ? 7 : 0));
+            }
+
+            return cache[year] = date;
+        }
+
+        function findRule(utcTime, rules, zone) {
+            rules = rules[zone];
+
+            if (!rules) {
+                var time = zone.split(":");
+                var offset = 0;
+
+                if (time.length > 1) {
+                    offset = time[0] * 60 + Number(time[1]);
+                }
+
+                return [-1000000, 'max', '-', 'Jan', 1, [0, 0, 0], offset, '-'];
+            }
+
+            var year = new Date(utcTime).getUTCFullYear();
+
+            rules = jQuery.grep(rules, function(rule) {
+                var from = rule[0];
+                var to = rule[1];
+
+                return from <= year && (to >= year || (from == year && to == "only") || to == "max");
+            });
+
+            rules.push(utcTime);
+
+            rules.sort(function(a, b) {
+                if (typeof a != "number") {
+                    a = Number(ruleToDate(year, a));
+                }
+
+                if (typeof b != "number") {
+                    b = Number(ruleToDate(year, b));
+                }
+
+                return a - b;
+            });
+
+            return rules[jQuery.inArray(utcTime, rules) - 1];
+        }
+
+        function findZone(utcTime, zones, timezone) {
+            zones = zones[timezone];
+
+            if (!zones) {
+                throw new Error('Timezone "' + timezone + '" is either incorrect, or kendo.timezones.min.js is not included.');
+            }
+
+            for (var idx = zones.length - 1; idx >= 0; idx--) {
+                var until = zones[idx][3];
+
+                if (until && utcTime > until) {
+                    break;
+                }
+            }
+
+            var zone = zones[idx + 1];
+
+            if (!zone) {
+                throw new Error('Timezone "' + timezone + '" not found on ' + utcTime + ".");
+            }
+
+            return zone;
+        }
+
+        function zoneAndRule(utcTime, zones, rules, timezone) {
+            if (typeof utcTime != NUMBER) {
+                utcTime = Date.UTC(utcTime.getFullYear(), utcTime.getMonth(),
+                    utcTime.getDate(), utcTime.getHours(), utcTime.getMinutes(),
+                    utcTime.getSeconds(), utcTime.getMilliseconds());
+            }
+
+            var zone = findZone(utcTime, zones, timezone);
+
+            return {
+                zone: zone,
+                rule: findRule(utcTime, rules, zone[1])
+            };
+        }
+
+        function offset(utcTime, timezone) {
+            if (timezone == "Etc/UTC" || timezone == "Etc/GMT") {
+                return 0;
+            }
+
+            var info = zoneAndRule(utcTime, this.zones, this.rules, timezone);
+            var zone = info.zone;
+            var rule = info.rule;
+
+            return rule? zone[0] - rule[6] : zone[0];
+        }
+
+        function abbr(utcTime, timezone) {
+            var info = zoneAndRule(utcTime, this.zones, this.rules, timezone);
+            var zone = info.zone;
+            var rule = info.rule;
+
+            var base = zone[2];
+
+            if (base.indexOf("/") >= 0) {
+                return base.split("/")[rule && rule[6] ? 1 : 0];
+            } else if (base.indexOf("%s") >= 0) {
+                return base.replace("%s", (!rule || rule[7] == "-") ? '' : rule[7]);
+            }
+
+            return base;
+        }
+
+        function convert(date, fromOffset, toOffset) {
+            if (typeof fromOffset == STRING) {
+                fromOffset = this.offset(date, fromOffset);
+            }
+
+            if (typeof toOffset == STRING) {
+                toOffset = this.offset(date, toOffset);
+            }
+
+            var fromLocalOffset = date.getTimezoneOffset();
+
+            date = new Date(date.getTime() + (fromOffset - toOffset) * 60000);
+
+            var toLocalOffset = date.getTimezoneOffset();
+
+            return new Date(date.getTime() + (toLocalOffset - fromLocalOffset) * 60000);
+        }
+
+        function apply(date, timezone) {
+           return this.convert(date, date.getTimezoneOffset(), timezone);
+        }
+
+        function remove(date, timezone) {
+           return this.convert(date, timezone, date.getTimezoneOffset());
+        }
+
+        return {
+           zones: {},
+           rules: {},
+           offset: offset,
+           convert: convert,
+           apply: apply,
+           remove: remove,
+           abbr: abbr
+        };
+    })();
+
+    kendo.date = (function(){
+        var MS_PER_MINUTE = 60000,
+            MS_PER_DAY = 86400000;
+
+        function adjustDST(date, hours) {
+            if (hours === 0 && date.getHours() === 23) {
+                date.setHours(date.getHours() + 2);
+                return true;
+            }
+
+            return false;
+        }
+
+        function setDayOfWeek(date, day, dir) {
+            var hours = date.getHours();
+
+            dir = dir || 1;
+            day = ((day - date.getDay()) + (7 * dir)) % 7;
+
+            date.setDate(date.getDate() + day);
+            adjustDST(date, hours);
+        }
+
+        function dayOfWeek(date, day, dir) {
+            date = new Date(date);
+            setDayOfWeek(date, day, dir);
+            return date;
+        }
+
+        function firstDayOfMonth(date) {
+            return new Date(
+                date.getFullYear(),
+                date.getMonth(),
+                1
+            );
+        }
+
+        function lastDayOfMonth(date) {
+            var last = new Date(date.getFullYear(), date.getMonth() + 1, 0),
+                first = firstDayOfMonth(date),
+                timeOffset = Math.abs(last.getTimezoneOffset() - first.getTimezoneOffset());
+
+            if (timeOffset) {
+                last.setHours(first.getHours() + (timeOffset / 60));
+            }
+
+            return last;
+        }
+
+        function getDate(date) {
+            date = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
+            adjustDST(date, 0);
+            return date;
+        }
+
+        function getMilliseconds(date) {
+            return date.getHours() * 60 * MS_PER_MINUTE + date.getMinutes() * MS_PER_MINUTE + date.getSeconds() * 1000 + date.getMilliseconds();
+        }
+
+        function isInTimeRange(value, min, max) {
+            var msMin = getMilliseconds(min),
+                msMax = getMilliseconds(max),
+                msValue;
+
+            if (!value || msMin == msMax) {
+                return true;
+            }
+
+            if (min >= max) {
+                max += MS_PER_DAY;
+            }
+
+            msValue = getMilliseconds(value);
+
+            if (msMin > msValue) {
+                msValue += MS_PER_DAY;
+            }
+
+            if (msMax < msMin) {
+                msMax += MS_PER_DAY;
+            }
+
+            return msValue >= msMin && msValue <= msMax;
+        }
+
+        function isInDateRange(value, min, max) {
+            var msMin = min.getTime(),
+                msMax = max.getTime(),
+                msValue;
+
+            if (msMin >= msMax) {
+                msMax += MS_PER_DAY;
+            }
+
+            msValue = value.getTime();
+
+            return msValue >= msMin && msValue <= msMax;
+        }
+
+        function addDays(date, offset) {
+            var hours = date.getHours();
+                date = new Date(date);
+
+            setTime(date, offset * MS_PER_DAY);
+            adjustDST(date, hours);
+            return date;
+        }
+
+        function setTime(date, time, ignoreDST) {
+            var offset = date.getTimezoneOffset(),
+                offsetDiff;
+
+            date.setTime(date.getTime() + time);
+
+            if (!ignoreDST) {
+                offsetDiff = date.getTimezoneOffset() - offset;
+                date.setTime(date.getTime() + offsetDiff * MS_PER_MINUTE);
+            }
+        }
+
+        function today() {
+            return getDate(new Date());
+        }
+
+        function isToday(date) {
+           return getDate(date).getTime() == today().getTime();
+        }
+
+        return {
+            adjustDST: adjustDST,
+            dayOfWeek: dayOfWeek,
+            setDayOfWeek: setDayOfWeek,
+            getDate: getDate,
+            isInDateRange: isInDateRange,
+            isInTimeRange: isInTimeRange,
+            isToday: isToday,
+            nextDay: function(date) {
+                return addDays(date, 1);
+            },
+            previousDay: function(date) {
+                return addDays(date, -1);
+            },
+            MS_PER_DAY: MS_PER_DAY,
+            MS_PER_MINUTE: MS_PER_MINUTE,
+            setTime: setTime,
+            addDays: addDays,
+            today: today,
+            firstDayOfMonth: firstDayOfMonth,
+            lastDayOfMonth: lastDayOfMonth,
+            getMilliseconds: getMilliseconds
+            //TODO methods: combine date portion and time portion from arguments - date1, date 2
+        };
+    })();
+
+
+    kendo.stripWhitespace = function(element) {
+        var iterator = document.createNodeIterator(element, NodeFilter.SHOW_TEXT, function(node) {
+                return node.parentNode == element ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+            }, false);
+
+        while (iterator.nextNode()) {
+            if (iterator.referenceNode && !iterator.referenceNode.textContent.trim()) {
+                iterator.referenceNode.parentNode.removeChild(iterator.referenceNode);
+            }
+        }
+    };
+
 })(jQuery, eval);
 
 /*global kendo_module:true */

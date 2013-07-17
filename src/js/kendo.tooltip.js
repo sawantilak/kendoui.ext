@@ -1,18 +1,16 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "tooltip",
     name: "Tooltip",
     category: "web",
-    description: "",
+    description: "The Tooltip widget displays a popup hint for a given html element.",
     depends: [ "core", "popup" ]
 });
 
@@ -83,8 +81,8 @@ kendo_module({
             center: "n"
         },
         DIMENSIONS = {
-            "horizontal": { offset: "top", size: "height" },
-            "vertical": { offset: "left", size: "width" }
+            "horizontal": { offset: "top", size: "outerHeight" },
+            "vertical": { offset: "left", size: "outerWidth" }
         },
         DEFAULTCONTENT = function(e) {
             return e.target.data(kendo.ns + "title");
@@ -114,7 +112,7 @@ kendo_module({
     }
 
     function saveTitleAttributes(element) {
-        while(element.length) {
+        while(element.length && !element.is("body")) {
             saveTitleAttributeForElement(element);
             element = element.parent();
         }
@@ -225,7 +223,7 @@ kendo_module({
                 }
             } else if (contentOptions && isFunction(contentOptions)) {
                 contentOptions = contentOptions({ target: target });
-                that.content.html(contentOptions);
+                that.content.html(contentOptions || "");
             } else {
                 that.content.html(contentOptions);
             }
@@ -256,6 +254,15 @@ kendo_module({
         _documentKeyDown: function(e) {
             if (e.keyCode === kendo.keys.ESC) {
                 this.hide();
+            }
+        },
+
+        refresh: function() {
+            var that = this,
+                popup = that.popup;
+
+            if (popup && popup.options.anchor) {
+                that._appendContent(popup.options.anchor);
             }
         },
 
@@ -387,11 +394,11 @@ kendo_module({
                 popup = that.popup,
                 anchor = popup.options.anchor,
                 anchorOffset = $(anchor).offset(),
-                arrowBorder = parseInt(that.arrow.css("borderWidth"), 10),
+                arrowBorder = parseInt(that.arrow.css("border-top-width"), 10),
                 elementOffset = $(popup.element).offset(),
                 cssClass = DIRCLASSES[popup.flipped ? REVERSE[position] : position],
                 offsetAmount = anchorOffset[offset] - elementOffset[offset] + ($(anchor)[dimensions.size]() / 2) - arrowBorder;
-
+                
            that.arrow
                .removeClass("k-callout-n k-callout-s k-callout-w k-callout-e")
                .addClass("k-callout-" + cssClass)

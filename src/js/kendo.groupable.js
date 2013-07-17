@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "groupable",
     name: "Groupable",
@@ -20,6 +18,7 @@ kendo_module({
     var kendo = window.kendo,
         Widget = kendo.ui.Widget,
         proxy = $.proxy,
+        isRtl = false,
         NS = ".kendoGroupable",
         indicatorTmpl = kendo.template('<div class="k-group-indicator" data-#=data.ns#field="${data.field}" data-#=data.ns#title="${data.title || ""}" data-#=data.ns#dir="${data.dir || "asc"}">' +
                 '<a href="\\#" class="k-link">' +
@@ -44,7 +43,7 @@ kendo_module({
                 .prepend('<span class="k-icon k-drag-status k-denied" />');
         },
         dropCue = $('<div class="k-grouping-dropclue"/>'),
-        nameSpecialCharRegExp = /("|'|\[|\]|\$|\.|\:|\+)/g;
+        nameSpecialCharRegExp = /("|\%|'|\[|\]|\$|\.|\,|\:|\;|\+|\*|\&|\!|\#|\(|\)|<|>|\=|\?|\@|\^|\{|\}|\~|\/|\||`)/g;
 
     function dropCueOffsetTop(element) {
         return element.position().top + 3;
@@ -57,9 +56,13 @@ kendo_module({
                 group = kendo.guid(),
                 intializePositions = proxy(that._intializePositions, that),
                 draggable,
+                horizontalCuePosition,
                 dropCuePositions = that._dropCuePositions = [];
 
             Widget.fn.init.call(that, element, options);
+
+            isRtl = kendo.support.isRtl(element);
+            horizontalCuePosition = isRtl ? "right" : "left";
 
             that.draggable = draggable = that.options.draggable || new kendo.ui.Draggable(that.element, {
                 filter: that.options.draggableElements,
@@ -73,7 +76,7 @@ kendo_module({
                     dragenter: function(e) {
                         if (that._canDrag(e.draggable.currentTarget)) {
                             e.draggable.hint.find(".k-drag-status").removeClass("k-denied").addClass("k-add");
-                            dropCue.css({top: dropCueOffsetTop(groupContainer), left: 0}).appendTo(groupContainer);
+                            dropCue.css("top", dropCueOffsetTop(groupContainer)).css(horizontalCuePosition, 0).appendTo(groupContainer);
                         }
                     },
                     dragleave: function(e) {
@@ -93,7 +96,7 @@ kendo_module({
                             return;
                         }
                         if(lastCuePosition) {
-                            position = that._dropCuePosition(kendo.getOffset(dropCue).left + parseInt(lastCuePosition.element.css("marginLeft"), 10) + parseInt(lastCuePosition.element.css("marginRight"), 10));
+                            position = that._dropCuePosition(kendo.getOffset(dropCue).left + parseInt(lastCuePosition.element.css("marginLeft"), 10) * (isRtl ? -1 : 1) + parseInt(lastCuePosition.element.css("marginRight"), 10));
                             if(position && that._canDrop($(sourceIndicator), position.element, position.left)) {
                                 if(position.before) {
                                     position.element.before(sourceIndicator || that.buildIndicator(field, title));
@@ -117,8 +120,9 @@ kendo_module({
                     dragstart: function(e) {
                         var element = e.currentTarget,
                             marginLeft = parseInt(element.css("marginLeft"), 10),
-                            left = element.position().left - marginLeft;
-
+                            elementPosition = element.position(),
+                            left = isRtl ? elementPosition.left - marginLeft : elementPosition.left + element.outerWidth();
+                            
                         intializePositions();
                         dropCue.css({top: dropCueOffsetTop(groupContainer), left: left}).appendTo(groupContainer);
                         this.hint.find(".k-drag-status").removeClass("k-denied").addClass("k-add");
@@ -283,24 +287,25 @@ kendo_module({
             position = Math.ceil(position);
 
             var lastCuePosition = dropCuePositions[dropCuePositions.length - 1],
+                left = lastCuePosition.left,
                 right = lastCuePosition.right,
                 marginLeft = parseInt(lastCuePosition.element.css("marginLeft"), 10),
                 marginRight = parseInt(lastCuePosition.element.css("marginRight"), 10);
 
-            if(position >= right) {
+            if(position >= right && !isRtl || position < left && isRtl) {
                 position = {
-                    left: lastCuePosition.element.position().left + lastCuePosition.element.outerWidth() + marginRight,
+                    left: lastCuePosition.element.position().left + (!isRtl ? lastCuePosition.element.outerWidth() + marginRight : - marginLeft),
                     element: lastCuePosition.element,
                     before: false
                 };
             } else {
                 position = $.grep(dropCuePositions, function(item) {
-                    return item.left <= position && position <= item.right;
+                    return (item.left <= position && position <= item.right) || (isRtl && position > item.right);
                 })[0];
 
                 if(position) {
                     position = {
-                        left: position.element.position().left - marginLeft,
+                        left: isRtl ? position.element.position().left + position.element.outerWidth() + marginRight : position.element.position().left - marginLeft,
                         element: position.element,
                         before: true
                     };
@@ -313,7 +318,7 @@ kendo_module({
             var position = this._dropCuePosition(event.x.location);
 
             if (position) {
-                dropCue.css({ left: position.left });
+                dropCue.css({ left: position.left, right: "auto" });
             }
         },
         _canDrag: function(element) {
@@ -325,8 +330,9 @@ kendo_module({
                     !this.indicator(field));
         },
         _canDrop: function(source, target, position) {
-            var next = source.next();
-            return source[0] !== target[0] && (!next[0] || target[0] !== next[0] || position > next.position().left);
+            var next = source.next(),
+                result = source[0] !== target[0] && (!next[0] || target[0] !== next[0] || (!isRtl && position > next.position().left || isRtl && position < next.position().left));
+            return result;
         },
         _dragEnd: function(draggable) {
             var that = this,

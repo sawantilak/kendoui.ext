@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "numerictextbox",
     name: "NumericTextBox",
@@ -26,6 +24,7 @@ kendo_module({
         parse = kendo.parseFloat,
         placeholderSupported = kendo.support.placeholder,
         getCulture = kendo.getCulture,
+        round = kendo._round,
         CHANGE = "change",
         DISABLED = "disabled",
         READONLY = "readonly",
@@ -34,7 +33,6 @@ kendo_module({
         ns = ".kendoNumericTextBox",
         TOUCHEND = "touchend",
         MOUSELEAVE = "mouseleave" + ns,
-        MOUSEUP = "touchcancel" + ns + " " + "touchend" + ns + " mouseup" + ns + " " + MOUSELEAVE,
         HOVEREVENTS = "mouseenter" + ns + " " + MOUSELEAVE,
         DEFAULT = "k-state-default",
         FOCUSED = "k-state-focused",
@@ -213,6 +211,9 @@ kendo_module({
                 .add(that._inputWrapper)
                 .off(ns);
 
+            that._upArrowEventHandler.destroy();
+            that._downArrowEventHandler.destroy();
+
             if (that._form) {
                 that._form.off("reset", that._resetHandler);
             }
@@ -276,6 +277,10 @@ kendo_module({
         _arrows: function() {
             var that = this,
             arrows,
+            _release = function() {
+                clearTimeout( that._spinning );
+                arrows.removeClass(SELECTED);
+            },
             options = that.options,
             spinners = options.spinners,
             element = that.element;
@@ -289,20 +294,15 @@ kendo_module({
                 arrows.wrapAll('<span class="k-select"/>');
             }
 
-            arrows.on(MOUSEUP, function() {
-                clearTimeout( that._spinning );
-                arrows.removeClass(SELECTED);
-            });
-
             if (!spinners) {
                 arrows.parent().toggle(spinners);
                 that._inputWrapper.addClass("k-expand-padding");
             }
 
             that._upArrow = arrows.eq(0);
-            that._upArrowEventHandler = new kendo.UserEvents(that._upArrow);
+            that._upArrowEventHandler = new kendo.UserEvents(that._upArrow, { release: _release });
             that._downArrow = arrows.eq(1);
-            that._downArrowEventHandler = new kendo.UserEvents(that._downArrow);
+            that._downArrowEventHandler = new kendo.UserEvents(that._downArrow, { release: _release });
         },
 
         _blur: function() {
@@ -322,10 +322,17 @@ kendo_module({
                     value = input.value.substring(0, idx),
                     format = that._format(that.options.format),
                     group = format[","],
-                    groupRegExp = new RegExp("\\" + group, "g"),
-                    extractRegExp = new RegExp("([\\d\\" + group + "]+)(\\" + format[POINT] + ")?(\\d+)?"),
-                    result = extractRegExp.exec(value),
+                    result, groupRegExp, extractRegExp,
                     caretPosition = 0;
+
+                if (group) {
+                    groupRegExp = new RegExp("\\" + group, "g");
+                    extractRegExp = new RegExp("([\\d\\" + group + "]+)(\\" + format[POINT] + ")?(\\d+)?");
+                }
+
+                if (extractRegExp) {
+                    result = extractRegExp.exec(value);
+                }
 
                 if (result) {
                     caretPosition = result[0].replace(groupRegExp, "").length;
@@ -519,8 +526,10 @@ kendo_module({
                 return;
             }
 
-            options[option] = that._parse(value);
-            that.element.attr("aria-value" + option, options[option]);
+            options[option] = value;
+            that.element
+                .attr("aria-value" + option, value)
+                .attr(option, value);
         },
 
         _spin: function(step, timeout) {
@@ -585,13 +594,23 @@ kendo_module({
             isNotNull = value !== NULL;
 
             if (isNotNull) {
-                value = parseFloat(value.toFixed(decimals));
+                value = parseFloat(round(value, decimals));
             }
 
             that._value = value = that._adjust(value);
             that._placeholder(kendo.toString(value, format, culture));
-            that.element.val(isNotNull ? value.toString().replace(POINT, numberFormat[POINT]) : "")
-                        .attr("aria-valuenow", value);
+
+            if (isNotNull) {
+                value = value.toString();
+                if (value.indexOf("e") !== -1) {
+                    value = round(+value, decimals);
+                }
+                value = value.replace(POINT, numberFormat[POINT]);
+            } else {
+                value = "";
+            }
+
+            that.element.val(value).attr("aria-valuenow", value);
         },
 
         _placeholder: function(value) {
@@ -626,7 +645,8 @@ kendo_module({
         _reset: function() {
             var that = this,
                 element = that.element,
-                form = element.closest("form");
+                formId = element.attr("form"),
+                form = formId ? $("#" + formId) : element.closest("form");
 
             if (form[0]) {
                 that._resetHandler = function() {

@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "sortable",
     name: "Sortable",
@@ -53,7 +51,8 @@ kendo_module({
         options: {
             name: "Sortable",
             mode: SINGLE,
-            allowUnsort: true
+            allowUnsort: true,
+            compare: null
         },
 
         destroy: function() {
@@ -106,6 +105,7 @@ kendo_module({
                 field = element.attr(kendo.attr(FIELD)),
                 dir = element.attr(kendo.attr(DIR)),
                 options = that.options,
+                compare = that.options.compare,
                 sort = that.dataSource.sort() || [],
                 idx,
                 length;
@@ -119,7 +119,7 @@ kendo_module({
             }
 
             if (options.mode === SINGLE) {
-                sort = [ { field: field, dir: dir } ];
+                sort = [ { field: field, dir: dir, compare: compare } ];
             } else if (options.mode === "multiple") {
                 for (idx = 0, length = sort.length; idx < length; idx++) {
                     if (sort[idx].field === field) {
@@ -127,7 +127,7 @@ kendo_module({
                         break;
                     }
                 }
-                sort.push({ field: field, dir: dir });
+                sort.push({ field: field, dir: dir, compare: compare });
             }
 
             e.preventDefault();

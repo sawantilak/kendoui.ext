@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "validator",
     name: "Validator",
@@ -48,11 +46,10 @@ kendo_module({
         },
         hasAttribute = function(input, name) {
             if (input.length)  {
-                return input[0].attributes[name] !== undefined;
+                return input[0].attributes[name] != null;
             }
             return false;
-        },
-        nameSpecialCharRegExp = /("|'|\[|\]|\$|\.|\:|\+)/g;
+        };
 
     if (!kendo.ui.validator) {
         kendo.ui.validator = { rules: {}, messages: {} };
@@ -83,6 +80,13 @@ kendo_module({
             return value[1].length;
         }
         return 0;
+    }
+
+    function parseHtml(text) {
+        if ($.parseHTML) {
+            return $($.parseHTML(text));
+        }
+        return $(text);
     }
 
     var Validator = Widget.extend({
@@ -123,7 +127,7 @@ kendo_module({
             },
             rules: {
                 required: function(input) {
-                    var checkbox = input.filter("[type=checkbox]").length && input.attr("checked") !== "checked",
+                    var checkbox = input.filter("[type=checkbox]").length && !input.is(":checked"),
                         value = input.val();
 
                     return !(hasAttribute(input, "required") && (value === "" || !value  || checkbox));
@@ -137,7 +141,7 @@ kendo_module({
                 min: function(input) {
                     if (input.filter(NUMBERINPUTSELECTOR + ",[" + kendo.attr("type") + "=number]").filter("[min]").length && input.val() !== "") {
                         var min = parseFloat(input.attr("min")) || 0,
-                            val = parseFloat(input.val());
+                            val = kendo.parseFloat(input.val());
 
                         return min <= val;
                     }
@@ -146,7 +150,7 @@ kendo_module({
                 max: function(input) {
                     if (input.filter(NUMBERINPUTSELECTOR + ",[" + kendo.attr("type") + "=number]").filter("[max]").length && input.val() !== "") {
                         var max = parseFloat(input.attr("max")) || 0,
-                            val = parseFloat(input.val());
+                            val = kendo.parseFloat(input.val());
 
                         return max >= val;
                     }
@@ -247,6 +251,7 @@ kendo_module({
                         invalid = true;
                     }
                 }
+
                 return !invalid;
             }
             return that.validateInput(that.element);
@@ -269,7 +274,7 @@ kendo_module({
             if (!valid) {
                 messageText = that._extractMessage(input, result.key);
                 that._errors[fieldName] = messageText;
-                var messageLabel = $(template({ message: decode(messageText) }));
+                var messageLabel = parseHtml(template({ message: decode(messageText) }));
 
                 that._decorateMessageContainer(messageLabel, fieldName);
 
@@ -301,7 +306,18 @@ kendo_module({
         _findMessageContainer: function(fieldName) {
             var locators = kendo.ui.validator.messageLocators,
                 name,
-                containers = this.element.find("." + INVALIDMSG + "[" + kendo.attr("for") +"=" + fieldName.replace(nameSpecialCharRegExp, "\\$1") + "]");
+                containers = $(),
+                children = this.element[0].getElementsByTagName("*");
+
+            for (var idx = 0, length = children.length; idx < length; idx++) {
+                var element = children[idx];
+                if (element.className.indexOf(INVALIDMSG) > -1) {
+                    var attr = element.getAttribute(kendo.attr("for"));
+                    if (attr === fieldName) {
+                        containers = containers.add(element);
+                    }
+                }
+            }
 
             for (name in locators) {
                 containers = containers.add(locators[name].locate(this.element, fieldName));

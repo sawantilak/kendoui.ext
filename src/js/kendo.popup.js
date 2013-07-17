@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "popup",
     name: "Pop-up",
@@ -41,6 +39,7 @@ kendo_module({
         EFFECTS = "effects",
         ACTIVE = "k-state-active",
         ACTIVEBORDER = "k-state-border",
+        ACTIVEBORDERREGEXP = /k-state-border-(\w+)/,
         ACTIVECHILDREN = ".k-picker-wrap, .k-dropdown-wrap, .k-link",
         MOUSEDOWN = "down",
         WINDOW = $(window),
@@ -124,7 +123,7 @@ kendo_module({
                     }
 
                     if (options.anchor != BODY) {
-                        direction = anchor.hasClass(ACTIVEBORDER + "-down") ? "down" : "up";
+                        direction = (anchor[0].className.match(ACTIVEBORDERREGEXP) || ["", "down"])[1];
                         dirClass = ACTIVEBORDER + "-" + direction;
 
                         anchor
@@ -354,9 +353,11 @@ kendo_module({
                 anchor = $(options.anchor)[0],
                 toggleTarget = options.toggleTarget,
                 target = kendo.eventTarget(e),
-                popup = $(target).closest(".k-popup")[0];
+                popup = $(target).closest(".k-popup"),
+                mobile = popup.parent().parent(".km-shim").length;
 
-            if (popup && popup !== that.element[0] ){
+            popup = popup[0];
+            if (!mobile && popup && popup !== that.element[0]){
                 return;
             }
 

@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "columnmenu",
     name: "Column Menu",
@@ -122,7 +120,9 @@ kendo_module({
                 that.filterMenu.destroy();
             }
 
-            that.dataSource.unbind("refresh", that._refreshHandler);
+            if (that._refreshHandler) {
+                that.dataSource.unbind(CHANGE, that._refreshHandler);
+            }
 
             if (that.options.columns) {
                 that.owner.unbind("columnShow", that._updateColumnsMenuHandler);
@@ -191,6 +191,7 @@ kendo_module({
 
             return map(menuColumns, function(col) {
                 return {
+                    originalField: col.field,
                     field: col.field || col.title,
                     title: col.title || col.field,
                     hidden: col.hidden,
@@ -322,12 +323,15 @@ kendo_module({
                 visible = grep(columns, function(field) {
                     return !field.hidden;
                 }),
+                visibleDataFields = grep(visible, function(field) {
+                    return field.originalField;
+                }).length,
                 selector = map(visible, function(col) {
                     return attr + '"' + col.field.replace(nameSpecialCharRegExp, "\\$1") + '"]';
                 }).join(",");
 
             this.wrapper.find(allselector).prop("checked", false);
-            this.wrapper.find(selector).prop("checked", true).prop("disabled", visible.length == 1);
+            this.wrapper.find(selector).prop("checked", true).prop("disabled", visibleDataFields == 1);
         },
 
         _filter: function() {

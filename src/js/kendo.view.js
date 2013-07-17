@@ -1,18 +1,17 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 kendo_module({
     id: "view",
     name: "View",
     category: "framework",
-    depends: [ "core" ],
+    description: "The View class instantiates and handles the events of a certain screen from the application.",
+    depends: [ "core", "binder" ],
     hidden: false
 });
 
@@ -34,27 +33,32 @@ kendo_module({
             that.content = content;
             that.tagName = options.tagName || "div";
             that.model = options.model;
+            that._wrap = options.wrap !== false;
 
             that.bind([ INIT, SHOW, HIDE ], options);
         },
 
         render: function(container) {
             var that = this,
-                element,
-                content;
+                notInitialized = !that.element;
 
-            if (!that.element) {
-                element = $("<" + that.tagName + " />");
-                content = $(document.getElementById(that.content) || that.content); // support passing id without #
-                element.append(content[0].tagName === SCRIPT ? content.html() : content);
-                that.element = element;
-                kendo.bind(that.element, that.model);
-                this.trigger(INIT);
+            // The order below matters - kendo.bind should be happen when the element is in the DOM, and SHOW should be triggered after INIT.
+
+            if (notInitialized) {
+                that.element = that._createElement();
             }
 
             if (container) {
-                this.trigger(SHOW);
                 $(container).append(that.element);
+            }
+
+            if (notInitialized) {
+                kendo.bind(that.element, that.model);
+                that.trigger(INIT);
+            }
+
+            if (container) {
+                that.trigger(SHOW);
             }
 
             return that.element;
@@ -66,10 +70,33 @@ kendo_module({
         },
 
         destroy: function() {
-            if (this.element) {
-                kendo.unbind(this.element);
-                this.element.remove();
+            var element = this.element;
+
+            if (element) {
+                kendo.unbind(element);
+                kendo.destroy(element);
+                element.remove();
             }
+        },
+
+        _createElement: function() {
+            var that = this,
+                element,
+                content;
+
+            content = $(document.getElementById(that.content) || that.content); // support passing id without #
+            element = $("<" + that.tagName + " />").append(content[0].tagName === SCRIPT ? content.html() : content);
+
+            // drop the wrapper if asked - this seems like the easiest (although not very intuitive) way to avoid messing up templates with questionable content, like the one below
+            // <script id="my-template">
+            // foo
+            // <span> Span </span>
+            // </script>
+            if (!that._wrap) {
+               element = element.contents();
+            }
+
+            return element;
         }
     });
 

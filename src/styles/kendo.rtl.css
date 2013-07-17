@@ -1,13 +1,11 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Beta v2013.2.716 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
-* Kendo UI Web commercial licenses may be obtained at
-* https://www.kendoui.com/purchase/license-agreement/kendo-ui-web-commercial.aspx
-* If you do not own a commercial license, this file shall be governed by the
-* GNU General Public License (GPL) version 3.
-* For GPL requirements, please review: http://www.gnu.org/copyleft/gpl.html
+* Kendo UI Beta license terms available at
+* http://www.kendoui.com/purchase/license-agreement/kendo-ui-beta.aspx
 */
+
 ﻿/* Kendo RTL CSS */
 
 .k-rtl
@@ -29,12 +27,12 @@
 .k-rtl .k-numeric-wrap
 {
     padding-right: 0;
-    padding-left: 22px;
+    padding-left: 1.9em;
 }
 
 .k-rtl .k-datetimepicker .k-picker-wrap {
     padding-right: 0;
-    padding-left: 42px;
+    padding-left: 3.8em;
 }
 
 .k-rtl span.k-picker-wrap .k-select,
@@ -52,6 +50,15 @@
 {
 	border-top-left-radius: 0;
 	border-bottom-left-radius: 0;
+	border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+}
+
+.k-webkit .k-rtl .k-dropdown-wrap .k-input,
+.k-webkit .k-rtl .k-picker-wrap .k-input,
+.k-webkit .k-rtl .k-numeric-wrap .k-input
+{
+    margin-right:-1px;
 }
 
 .k-rtl .k-datetimepicker .k-picker-wrap .k-icon
@@ -157,6 +164,18 @@
     border-width: 0;
 }
 
+.k-rtl .k-header > .k-grid-filter,
+.k-rtl .k-header > .k-header-column-menu
+{
+    float: left;
+}
+
+.k-rtl .k-grid-header .k-filterable .k-link
+{
+    padding-left: 2.4em;
+    padding-right: .6em;
+}
+
 .k-rtl .k-grid-header .k-header:first-child,
 .k-rtl .k-grid tbody td:first-child,
 .k-rtl .k-grid tfoot td:first-child
@@ -184,6 +203,40 @@
 {
     right: auto;
     left: 0;
+}
+
+/* Editing */
+
+.k-rtl .k-edit-label,
+.k-rtl .k-edit-form-container .editor-label
+{
+    float:right;
+    clear:both;
+    margin-left: 0;
+    margin-right: 2%;
+    text-align: left;
+}
+
+.k-rtl .k-edit-field,
+.k-rtl .k-edit-form-container .editor-field
+{
+    float:left;
+    clear:left;
+    margin-right: 0;
+    margin-left: 2%;
+}
+
+.k-rtl .k-edit-field > input[type="checkbox"]:first-child,
+.k-rtl .k-edit-field > input[type="radio"]:first-child,
+.k-rtl .k-edit-field > label:first-child > input[type="checkbox"],
+.k-rtl .k-edit-field > .k-button:first-child
+{
+    margin-right: 0;
+}
+
+.k-rtl .k-edit-form-container .k-edit-buttons
+{
+    text-align: left;
 }
 
 /* Pager */
@@ -270,6 +323,245 @@
     float: right;
     margin-right: 0;
     margin-left: 5px;
+}
+
+/* Scheduler */
+
+.k-rtl .k-scheduler-toolbar > ul
+{
+    float:left;
+}
+
+.k-rtl .k-scheduler-toolbar > ul:first-child
+{
+    float:right;
+}
+
+.k-rtl .k-scheduler-toolbar > ul > li,
+.k-rtl .k-scheduler-footer > ul > li
+{
+    border-width:1px 0 1px 1px;
+}
+
+.k-rtl .k-scheduler-toolbar > ul > li:first-child
+{
+    border-right-width:1px;
+}
+
+.k-rtl .k-scheduler div.k-scheduler-footer ul li
+{
+    margin-right: 0;
+    margin-left: .6em;
+}
+
+.k-rtl .k-scheduler-toolbar .k-i-calendar,
+.k-rtl .k-scheduler-footer .k-icon
+{
+    margin-right: 0;
+    margin-left: 6px;
+}
+
+.k-rtl .k-scheduler .k-scrollbar-v .k-scheduler-header-wrap
+{
+    border-right-width: 0;
+    border-left-width: 1px;
+}
+
+.k-rtl .k-scheduler-monthview .k-scheduler-table td
+{
+    text-align: left;
+}
+
+.k-rtl .k-scheduler-table td,
+.k-rtl .k-scheduler-header th
+{
+    border-left-width: 0;
+    border-right-width: 1px;
+}
+
+.k-rtl .k-scheduler-table td:first-child,
+.k-rtl .k-scheduler-header th:first-child
+{
+    border-right-width: 0;
+}
+
+.k-rtl .k-scheduler-agenda .k-scheduler-table td:first-child
+{
+    border-left-width: 0;
+    border-right-width: 1px;
+}
+
+.k-rtl .k-scheduler-agenda .k-scheduler-table td.k-scheduler-datecolumn
+{
+    border-right-width: 0;
+}
+
+.k-rtl .k-scheduler-times th
+{
+    text-align: left;
+    padding-right: .5em;
+    padding-left: .6em;
+    border-right-width: 0;
+    border-left-width: 1px;
+}
+
+.k-rtl .k-scheduler-now-arrow
+{
+    left:auto;
+    right:0;
+}
+
+.k-rtl .k-scheduler-now-line
+{
+    left:0;
+    right:5px;
+}
+
+.k-rtl .k-event,
+.k-rtl .k-more-events
+{
+    text-align:right;
+}
+
+.k-rtl .k-event dl
+{
+    padding-left: 1.8em;
+    padding-right: .6em;
+}
+
+.k-rtl .k-event-actions,
+.k-rtl .k-event > .k-link,
+.k-rtl .k-task > .k-link
+{
+    right: auto;
+    left:4px;
+}
+
+.k-rtl .k-scheduler-agenda .k-task > .k-link
+{
+    right: auto;
+    left: 0;
+}
+
+.k-rtl .k-event-actions:first-child
+{
+    float: right;
+    margin-left: 2px;
+    margin-right: 4px;
+}
+
+.k-rtl .k-event .k-event-top-actions,
+.k-rtl .k-event .k-event-bottom-actions
+{
+    left: auto;
+    right: 0;
+}
+
+.k-rtl .k-event > .k-resize-e
+{
+    right: auto;
+    left: 0;
+}
+
+.k-rtl .k-event > .k-resize-w
+{
+    left: auto;
+    right: 0;
+}
+
+.k-rtl .k-event > .k-resize-e:after,
+.k-rtl .k-event > .k-resize-w:after
+{
+    left: auto;
+    right: 1px;
+}
+
+.k-rtl .k-event > .k-resize-e:after
+{
+    right: auto;
+    left: 1px;
+}
+
+.k-rtl .k-scheduler-marquee .k-label-top
+{
+    left: auto;
+    right: .8em;
+}
+
+.k-rtl .k-scheduler-marquee .k-label-bottom
+{
+    right: auto;
+    left: .81em;
+}
+
+.k-rtl .k-tooltip-bottom
+{
+    text-align: right;
+}
+
+.k-rtl .k-tooltip-bottom .k-button
+{
+    float: right;
+    margin-right: 0;
+    margin-left: .3em;
+}
+
+.k-rtl .k-tooltip-bottom .k-quickedit-details
+{
+    float: left;
+    margin-left: 0;
+}
+
+.k-rtl .k-scheduler-agenda .k-scheduler-table th,
+.k-rtl .k-scheduler-agenda .k-scheduler-table td
+{
+    text-align: right;
+}
+
+.k-rtl .k-scheduler-timecolumn > div > .k-i-arrow-e
+{
+    right: auto;
+    left: -4px;
+}
+
+.k-rtl .k-scheduler-timecolumn .k-i-arrow-w
+{
+    margin-left: 0;
+    margin-right: -4px;
+}
+
+.k-rtl .k-scheduler-mark
+{
+    margin-right: 0;
+    margin-left: .5em;
+}
+
+.k-rtl .k-scheduler-agendaday
+{
+    float: right;
+    margin:0 0 0 .2em;
+}
+
+.k-rtl .k-scheduler-edit-form > .k-edit-box:first-child .k-datetimepicker
+{
+    margin-right: 0;
+    margin-left: 1em;
+}
+
+.k-rtl .k-edit-box
+{
+    float: right;
+}
+
+.k-rtl .k-edit-box + .k-edit-box
+{
+    float: left;
+}
+
+.k-rtl .k-scheduler-edit-form label + input
+{
+    margin-left: 0;
+    margin-right: 1em;
 }
 
 /* Slider */
@@ -377,17 +669,47 @@
 
 /* Upload */
 
-.k-rtl .k-progress,
-.k-rtl .k-progress-status
+.k-rtl .k-dropzone em
+{
+    margin-left: 0;
+    margin-right: .6em;
+}
+
+.k-rtl .k-upload-files .k-button,
+.k-rtl .k-upload-status-total .k-icon
+{
+    margin-left: 0;
+    margin-right: 8px;
+}
+
+.k-rtl .k-file
+{
+    padding-right: .8em;
+    padding-left: .167em;
+}
+
+.k-rtl .k-filename
+{
+    margin-left: 0;
+    margin-right: 1em;
+}
+
+.k-rtl .k-upload-status
+{
+    right: auto;
+    left: 12px;
+}
+
+.k-rtl .k-progress
 {
     left: auto;
     right: 0;
 }
 
-.k-rtl .k-upload-files .k-button
+.k-rtl .k-upload-selected
 {
-    margin-left: 0;
-    margin-right: 8px;
+    margin-right: .8em;
+    margin-left: .2em;
 }
 
 /* Window */
